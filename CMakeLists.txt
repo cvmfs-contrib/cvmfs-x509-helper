@@ -110,8 +110,8 @@ add_subdirectory (src)
 #
 # Documentation
 #
-install (
-    FILES                   README AUTHORS ChangeLog COPYING
-    DESTINATION             share/doc/cvmfs-x509-helper-${CVMFS-X509-Helper_VERSION_STRING}
-    PERMISSIONS             OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
-        )
+#install (
+#    FILES                   README AUTHORS ChangeLog COPYING
+#    DESTINATION             share/doc/cvmfs-x509-helper-${CVMFS-X509-Helper_VERSION_STRING}
+#    PERMISSIONS             OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+#        )

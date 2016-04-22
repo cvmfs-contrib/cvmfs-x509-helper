@@ -53,24 +53,14 @@ make %{?_smp_mflags}
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT install
 
-# Fix docdir on SuSE
-%if 0%{?suse_version}
-mkdir -p %RPM_BUILD_ROOT/usr/share/doc/package/%{name}
-mv $RPM_BUILD_ROOT/usr/share/doc/%{name}-%{version} %RPM_BUILD_ROOT/usr/share/doc/package/%{name}
-%endif
-
-# Fix docdir on Fedora
-%if 0%{?fedora}
-rm -rf $RPM_BUILD_ROOT/usr/share/doc/%{name}-%{version}
-%endif
-
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+
 %files
 %defattr(-,root,root)
-%/usr/libexec/cvmfs/authz/cvmfs_x509_helper
+/usr/libexec/cvmfs/authz/cvmfs_x509_helper
 %doc COPYING AUTHORS README ChangeLog
 
 %changelog

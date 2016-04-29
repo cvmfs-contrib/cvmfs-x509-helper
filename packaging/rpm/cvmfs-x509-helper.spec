@@ -19,7 +19,11 @@ BuildRequires: globus-gsi-callback-devel
 BuildRequires: globus-gsi-cert-utils-devel
 BuildRequires: globus-gsi-credential-devel
 BuildRequires: globus-gsi-sysconfig-devel
+%if 0%{?el5} || 0%{?el4}
+BuildRequires: e2fsprogs-devel
+%else
 BuildRequires: libuuid-devel
+%endif
 BuildRequires: openssl-devel
 BuildRequires: pkgconfig
 BuildRequires: voms-devel

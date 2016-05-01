@@ -65,6 +65,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 /usr/libexec/cvmfs/authz/cvmfs_x509_helper
+/usr/libexec/cvmfs/authz/cvmfs_x509_validator
 %doc COPYING AUTHORS README ChangeLog
 
 %changelog

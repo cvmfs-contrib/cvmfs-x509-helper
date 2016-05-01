@@ -9,12 +9,23 @@ set (CVMFS_X509_HELPER_SOURCES
   x509_helper_req.cc x509_helper_req.h
   x509_helper_voms.cc x509_helper_voms.h)
 
+set (CVMFS_X509_VALIDATOR_SOURCES
+  x509_validator.cc
+  x509_helper_globus.cc x509_helper_globus.h
+  x509_helper_log.cc x509_helper_log.h
+  x509_helper_dynlib.cc x509_helper_dynlib.h
+  x509_helper_voms.cc x509_helper_voms.h)
+
 add_executable (cvmfs_x509_helper ${CVMFS_X509_HELPER_SOURCES})
+add_executable (cvmfs_x509_validator ${CVMFS_X509_VALIDATOR_SOURCES})
 add_dependencies (cvmfs_x509_helper libvjson)
 target_link_libraries (cvmfs_x509_helper vjson ${OPENSSL_LIBRARIES} dl)
+target_link_libraries (cvmfs_x509_validator dl)
 
 install (
-  TARGETS      cvmfs_x509_helper
+  TARGETS      cvmfs_x509_helper cvmfs_x509_validator
   RUNTIME
   DESTINATION    libexec/cvmfs/authz
 )
+
+

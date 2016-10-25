@@ -1,14 +1,20 @@
 #!/bin/sh
 
 #
-# This script builds an rpm that fits the current platform.
+# This script builds a package that fits the current platform.
 #
 
 set -e
 
+get_package_type() {
+  which dpkg > /dev/null 2>&1 && echo "deb" && return 0
+  which rpm  > /dev/null 2>&1 && echo "rpm" && return 0
+  return 1
+}
+
 if [ $# -lt 2 ]; then
   echo "Usage: $0 <CernVM-FS source directory> <build result location>"
-  echo "This script builds packages for the current platform."
+  echo "This script builds the package for the current platform."
   exit 1
 fi
 
@@ -25,25 +31,4 @@ if [ -z "$CVMFS_BUILD_LOCATION" ]; then
   exit 1
 fi
 
-SPEC_FILE="${CVMFS_SOURCE_LOCATION}/packaging/rpm/cvmfs-x509-helper.spec"
-
-echo "preparing the build environment in ${CVMFS_BUILD_LOCATION}..."
-for d in BUILD RPMS SOURCES SRPMS TMP; do
-  mkdir -p ${CVMFS_BUILD_LOCATION}/${d}
-done
-
-echo "figure out version..."
-VERSION=$(grep ^Version: "${SPEC_FILE}" | awk '{print $2}')
-echo "  ...version ${VERSION}"
-
-echo "create source tarball..."
-cd "${CVMFS_SOURCE_LOCATION}"
-git archive --prefix="cvmfs-x509-helper-${VERSION}/" \
-  -o "${CVMFS_BUILD_LOCATION}/SOURCES/cvmfs-x509-helper-${VERSION}.tar.gz" \
-  HEAD
-ls -lah "${CVMFS_BUILD_LOCATION}/SOURCES"
-
-echo "building RPM package..."
-rpmbuild --define "%_topdir ${CVMFS_BUILD_LOCATION}"      \
-         --define "%_tmppath ${CVMFS_BUILD_LOCATION}/TMP" \
-         -ba "${SPEC_FILE}"
+$(dirname $0)/$(get_package_type).sh "$CVMFS_SOURCE_LOCATION" "$CVMFS_BUILD_LOCATION"

@@ -1,24 +1,32 @@
 #!/bin/sh
 
+#
+# This script builds the debian package
+#
+
 set -e
 
-#
-# This script is not called by the CI system! It is supposed to be used for
-# package creation debugging and as a blue print for CI configuration.
-#
-
-usage() {
-  echo "Sample script that builds the cvmfs-x509-helper debian package from source"
-  echo "Usage: $0 <work dir> <source tree root>"
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <CernVM-FS source directory> <build result location>"
+  echo "This script build the rpm for the current platform."
   exit 1
-}
-
-if [ $# -ne 2 ]; then
-  usage
 fi
 
-workdir=$1
-srctree=$(readlink --canonicalize $2)
+CVMFS_SOURCE_LOCATION="$1"
+CVMFS_BUILD_LOCATION="$2"
+
+if [ -z "$CVMFS_SOURCE_LOCATION" ]; then
+  echo "CVMFS_SOURCE_LOCATION missing"
+  exit 1
+fi
+
+if [ -z "$CVMFS_BUILD_LOCATION" ]; then
+  echo "CVMFS_BUILD_LOCATION missing"
+  exit 1
+fi
+
+workdir="$CVMFS_BUILD_LOCATION"
+srctree=$(readlink --canonicalize "$CVMFS_SOURCE_LOCATION")
 
 if [ "$(ls -A $workdir 2>/dev/null)" != "" ]; then
   echo "$workdir must be empty"
@@ -26,7 +34,7 @@ if [ "$(ls -A $workdir 2>/dev/null)" != "" ]; then
 fi
 
 echo -n "creating workspace in $workdir... "
-mkdir ${workdir}/tmp ${workdir}/src ${workdir}/result
+mkdir ${workdir}/tmp ${workdir}/src
 echo "done"
 
 echo -n "copying source tree to $workdir/tmp... "
@@ -48,6 +56,4 @@ echo "done: $upstream_version"
 echo "building..."
 cd ${workdir}/src/cvmfs-x509-helper
 dch -v $upstream_version -M "bumped upstream version number"
-
-cd debian
-pdebuild --buildresult ${workdir}/result -- --save-after-exec --debug
+DEB_BUILD_OPTIONS=parallel=$(nproc) debuild -us -uc # -us -uc == skip signing

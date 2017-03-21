@@ -126,14 +126,15 @@ static FILE *GetProxyFileInternal(pid_t pid, uid_t uid, gid_t gid)
   // If we can't chroot, we might be running this binary unprivileged -
   // don't try subsequent changes.
   bool can_chroot = true;
-  if (-1 == chroot(container_path)) {
+  if (-1 == chdir(container_cwd)) { // Change directory to same one as process.
     can_chroot = false;
   }
-  else if (-1 == chdir(container_cwd)) { // Change directory to same one as process.
-    if ((-1 == fchdir(fd)) || (-1 == chroot(".")) || (-1 == fchdir(fd2))) {
+  if (can_chroot && (-1 == chroot(container_path))) {
+    if (-1 == fchdir(fd)) {
       // Unable to restore original state!  Abort...
       abort();
     }
+    can_chroot = false;
     seteuid(olduid);
     return NULL;
   }

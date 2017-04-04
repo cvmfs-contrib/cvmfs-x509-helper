@@ -5,6 +5,8 @@
 #include "x509_helper_fetch.h"
 
 #include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <cassert>
@@ -91,18 +93,67 @@ static FILE *GetProxyFileInternal(pid_t pid, uid_t uid, gid_t gid)
   }
   LogAuthz(kLogAuthzDebug, "looking for proxy in file %s", path);
 
+  /**
+   * If the target process is running inside a container, then we must
+   * adjust our fopen below for a chroot.
+   */
+  char container_path[PATH_MAX];
+  if (snprintf(container_path, PATH_MAX, "/proc/%d/root", pid) >=
+      PATH_MAX) {
+    if (errno == 0) {errno = ERANGE;}
+    return NULL;
+  }
+  char container_cwd[PATH_MAX];
+  if (snprintf(container_cwd, PATH_MAX, "/proc/%d/cwd", pid) >=
+      PATH_MAX) {
+    if (errno == 0) {errno = ERANGE;}
+    return NULL;
+  }
+
   int olduid = geteuid();
   int oldgid = getegid();
   // NOTE the sequencing: we must be eUID 0
   // to change the UID and GID.
   seteuid(0);
+
+  int fd = open("/", O_RDONLY);  // Open FD to old root directory.
+  int fd2 = open(".", O_RDONLY); // Open FD to old $CWD
+  if ((fd == -1) || (fd2 == -1)) {
+    seteuid(olduid);
+    return NULL;
+  }
+
+  // If we can't chroot, we might be running this binary unprivileged -
+  // don't try subsequent changes.
+  bool can_chroot = true;
+  if (-1 == chdir(container_cwd)) { // Change directory to same one as process.
+    can_chroot = false;
+  }
+  if (can_chroot && (-1 == chroot(container_path))) {
+    if (-1 == fchdir(fd)) {
+      // Unable to restore original state!  Abort...
+      abort();
+    }
+    can_chroot = false;
+    seteuid(olduid);
+    return NULL;
+  }
+
   setegid(gid);
   seteuid(uid);
 
   FILE *fp = fopen(path, "r");
 
-  seteuid(0);
-  setegid(oldgid);
+  seteuid(0); // Restore root privileges.
+  if (can_chroot &&
+       ((-1 == fchdir(fd)) || // Change to old root directory so we can reset chroot.
+        (-1 == chroot(".")) ||
+        (-1 == fchdir(fd2)) // Change to original $CWD
+       )
+     ) {
+    abort();
+  }
+  setegid(oldgid); // Restore remaining privileges.
   seteuid(olduid);
 
   return fp;

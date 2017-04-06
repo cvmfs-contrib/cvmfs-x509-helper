@@ -2,7 +2,7 @@
 
 Summary: CernVM File System X509 Authz Helper
 Name: cvmfs-x509-helper
-Version: 0.9
+Version: 1.0
 Release: 1%{?dist}
 Source0: https://ecsft.cern.ch/dist/cvmfs/%{name}-%{version}.tar.gz
 Group: Applications/System
@@ -69,5 +69,10 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYING AUTHORS README ChangeLog
 
 %changelog
+* Thu Apr 06 2017 Dave Dykstra <dwd@fnal.gov> - 1.0-1
+- Use the same root / $CWD as the target process.  Without this, the
+  authz process may utilize the incorrect file for target processes
+  that are in a chroot or provide a relative path for the X509 proxy.
+
 * Fri Apr 22 2016 Jakob Blomer <jblomer@cern.ch> - 0.9-1
 - Initial packaging

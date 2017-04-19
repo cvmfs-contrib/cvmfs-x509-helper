@@ -9,14 +9,6 @@ project (${PROJECT_NAME})
 message ("Running CMake version ${CMAKE_VERSION}")
 
 #
-# The version numbers
-#
-set (CVMFS-X509-Helper_VERSION_MAJOR 0)
-set (CVMFS-X509-Helper_VERSION_MINOR 9)
-set (CVMFS-X509-Helper_VERSION_PATCH 0)
-set (CVMFS-X509-Helper_VERSION_STRING "${CVMFS-X509-Helper_VERSION_MAJOR}.${CVMFS-X509-Helper_VERSION_MINOR}.${CVMFS-X509-Helper_VERSION_PATCH}")
-
-#
 # set the path where cmake looks for additional modules
 #
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -106,12 +98,3 @@ include_directories (${INCLUDE_DIRECTORIES} vjson)
 
 add_subdirectory (vjson)
 add_subdirectory (src)
-
-#
-# Documentation
-#
-#install (
-#    FILES                   README AUTHORS ChangeLog COPYING
-#    DESTINATION             share/doc/cvmfs-x509-helper-${CVMFS-X509-Helper_VERSION_STRING}
-#    PERMISSIONS             OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
-#        )

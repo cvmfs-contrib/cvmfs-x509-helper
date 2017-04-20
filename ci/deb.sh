@@ -49,8 +49,8 @@ cp -R ${workdir}/tmp/packaging/debian/* ${workdir}/src/cvmfs-x509-helper/debian
 echo "done"
 
 echo -n "figuring out version number... "
-eval `sed -n 's/set (CVMFS-X509-Helper_VERSION_\([^ ]*\) \([0-9]*\)).*/\1=\2/p' ${srctree}/CMakeLists.txt`
-upstream_version="$MAJOR.$MINOR.$PATCH"
+specfile="$srctree/packaging/rpm/cvmfs-x509-helper.spec"
+upstream_version="$(grep ^Version: $specfile | awk '{print $2}').$(grep ^Release: $specfile | awk '{print $2}' | cut -d% -f1)"
 echo "done: $upstream_version"
 
 echo "building..."

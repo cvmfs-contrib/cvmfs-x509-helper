@@ -1,6 +1,5 @@
 # created by ../../ci/update-debdsc.sh, do not edit by hand
 Debtransform-Tar: cvmfs-x509-helper-1.0.tar.gz
-Debtransform-Files-Tar: 
 Format: 1.0
 Version: 1.0.1-1
 Binary: cvmfs-x509-helper
@@ -18,3 +17,4 @@ Depends: ${shlibs:Depends}, cvmfs, libglobus-common0, libglobus-gsi-callback0, l
 Description: CernVM File System X509 authz helper
 Files:
   ffffffffffffffffffffffffffffffff 99999 file1
+  ffffffffffffffffffffffffffffffff 99999 file2

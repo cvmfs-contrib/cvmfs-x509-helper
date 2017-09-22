@@ -1,5 +1,7 @@
 # created by ../../ci/update-debdsc.sh, do not edit by hand
 3.0 (native)
+Version: 1.0.1-1
+Binary: cvmfs-x509-helper
 Source: cvmfs-x509-helper
 Maintainer: Jakob Blomer <jblomer@cern.ch>
 Section: utils

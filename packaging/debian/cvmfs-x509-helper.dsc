@@ -18,4 +18,3 @@ Depends: ${shlibs:Depends}, cvmfs, libglobus-common0, libglobus-gsi-callback0, l
 Description: CernVM File System X509 authz helper
 Files:
   ffffffffffffffffffffffffffffffff 99999 file1
-  ffffffffffffffffffffffffffffffff 99999 file2

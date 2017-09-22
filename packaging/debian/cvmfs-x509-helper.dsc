@@ -1,8 +1,7 @@
 # created by ../../ci/update-debdsc.sh, do not edit by hand
-Debtransform-Release: 1
 Debtransform-Tar: cvmfs-x509-helper-1.0.1.tar.gz
 Format: 3.0 (native)
-Version: 1.0.1
+Version: 1.0.1-1
 Binary: cvmfs-x509-helper
 Source: cvmfs-x509-helper
 Maintainer: Jakob Blomer <jblomer@cern.ch>

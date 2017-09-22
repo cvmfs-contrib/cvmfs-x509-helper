@@ -1,6 +1,8 @@
 # created by ../../ci/update-debdsc.sh, do not edit by hand
-3.0 (native)
-Version: 1.0.1-1
+Debtransform-Release: 1
+Debtransform-Tar: cvmfs-x509-helper-1.0.1.tar.gz
+Format: 3.0 (native)
+Version: 1.0.1
 Binary: cvmfs-x509-helper
 Source: cvmfs-x509-helper
 Maintainer: Jakob Blomer <jblomer@cern.ch>
@@ -15,4 +17,5 @@ Architecture: i386 amd64
 Depends: ${shlibs:Depends}, cvmfs, libglobus-common0, libglobus-gsi-callback0, libglobus-gsi-cert-utils0, libglobus-gsi-credential1, libvomsapi1
 Description: CernVM File System X509 authz helper
 Files:
-  ffffffffffffffffffffffffffffffff 99999 cvmfs-x509-helper-1.0.1.tar.gz
+  ffffffffffffffffffffffffffffffff 99999 file1
+  ffffffffffffffffffffffffffffffff 99999 file2

@@ -1,4 +1,4 @@
-# created by ../../ci/update-debdsc.sh, do not edit by hand
+# created by ../../ci/obsupdate-deb.sh, do not edit by hand
 Debtransform-Tar: cvmfs-x509-helper-1.0.tar.gz
 Format: 1.0
 Version: 1.0.1-2

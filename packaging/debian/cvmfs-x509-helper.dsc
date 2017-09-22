@@ -13,4 +13,4 @@ Architecture: i386 amd64
 Depends: ${shlibs:Depends}, cvmfs, libglobus-common0, libglobus-gsi-callback0, libglobus-gsi-cert-utils0, libglobus-gsi-credential1, libvomsapi1
 Description: CernVM File System X509 authz helper
 Files:
-  ffffffffffffffffffffffffffffffff 99999 cvmfs-x509-helper_1.0.1.orig.tar.gz
+  ffffffffffffffffffffffffffffffff 99999 cvmfs-x509-helper-1.0.1.tar.gz

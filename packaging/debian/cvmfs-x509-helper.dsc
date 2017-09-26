@@ -1,14 +1,14 @@
 # created by ../../ci/obsupdate-deb.sh, do not edit by hand
 Debtransform-Tar: cvmfs-x509-helper-1.0.tar.gz
 Format: 1.0
-Version: 1.0.1-5
+Version: 1.0.1-7
 Binary: cvmfs-x509-helper
 Source: cvmfs-x509-helper
 Maintainer: Jakob Blomer <jblomer@cern.ch>
 Section: utils
 Priority: extra
 Standards-Version: 3.9.3.1
-Build-Depends: debhelper (>= 9), cmake, libglobus-common-dev, libglobus-gsi-callback-dev, libglobus-gsi-cert-utils-dev, libglobus-gsi-credential-dev, libssl-dev, pkg-config, voms-dev, uuid-dev
+Build-Depends: debhelper (>= 9), cmake, libglobus-common-dev, libglobus-gsi-callback-dev, libglobus-gsi-cert-utils-dev, libglobus-gsi-credential-dev, libssl-dev (< 1.1) | libssl1.0-dev, pkg-config, voms-dev, uuid-dev
 Homepage: http://cernvm.cern.ch/portal/filesystem
 
 Package: cvmfs-x509-helper

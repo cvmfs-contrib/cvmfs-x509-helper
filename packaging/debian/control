@@ -3,7 +3,7 @@ Maintainer: Jakob Blomer <jblomer@cern.ch>
 Section: utils
 Priority: extra
 Standards-Version: 3.9.3.1
-Build-Depends: debhelper (>= 9), cmake, libglobus-common-dev, libglobus-gsi-callback-dev, libglobus-gsi-cert-utils-dev, libglobus-gsi-credential-dev, libssl-dev (< 1.1) | libssl1.0-dev, pkg-config, voms-dev, uuid-dev
+Build-Depends: debhelper (>= 9), cmake, libglobus-common-dev, libglobus-gsi-callback-dev, libglobus-gsi-cert-utils-dev, libglobus-gsi-credential-dev, libssl-dev, pkg-config, voms-dev, uuid-dev
 Homepage: http://cernvm.cern.ch/portal/filesystem
 
 Package: cvmfs-x509-helper

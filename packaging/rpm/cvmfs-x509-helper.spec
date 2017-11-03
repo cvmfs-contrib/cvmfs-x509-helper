@@ -3,7 +3,9 @@
 Summary: CernVM File System X509 Authz Helper
 Name: cvmfs-x509-helper
 Version: 1.0
-Release: 1%{?dist}
+# The release_prefix macro is used in the OBS prjconf, don't change its name
+%define release_prefix 2
+Release: %{release_prefix}%{?dist}
 Source0: https://ecsft.cern.ch/dist/cvmfs/%{name}-%{version}.tar.gz
 Group: Applications/System
 License: BSD
@@ -69,6 +71,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYING AUTHORS README ChangeLog
 
 %changelog
+* Fri Nov 03 2017 Dave Dykstra <dwd@fnal.gov> - 1.0-2
+- Add %release_prefix macro to support openSUSE Build System
+
 * Thu Apr 06 2017 Dave Dykstra <dwd@fnal.gov> - 1.0-1
 - Use the same root / $CWD as the target process.  Without this, the
   authz process may utilize the incorrect file for target processes

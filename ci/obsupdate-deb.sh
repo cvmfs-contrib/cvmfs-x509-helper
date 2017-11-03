@@ -9,9 +9,9 @@ cd $HERE/../packaging/debian
 PKG="`sed -n 's/^Source: //p' control`"
 SPECFILE="../rpm/cvmfs-x509-helper.spec"
 VERSION="$(grep ^Version: $SPECFILE | awk '{print $2}')"
-RPMREL="$(grep ^Release: $SPECFILE | awk '{print $2}' | cut -d% -f1)"
+RPMREL="$(grep '^%define release_prefix' $SPECFILE | awk '{print $3}' | cut -d% -f1)"
 # if the version is current, increment the release number, else choose 1
-DEBREL="`sed -n "s/^Version: ${VERSION}.${RPMREL}-//p" $PKG.dsc 2>/dev/null`"
+DEBREL="`sed -n "s/^Version: ${VERSION}\.${RPMREL}//p" $PKG.dsc 2>/dev/null`"
 if [ -z "$DEBREL" ]; then
     DEBREL=1
 else

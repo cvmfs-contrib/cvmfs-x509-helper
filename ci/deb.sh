@@ -7,8 +7,8 @@
 set -e
 
 if [ $# -lt 2 ]; then
-  echo "Usage: $0 <CernVM-FS source directory> <build result location>"
-  echo "This script build the rpm for the current platform."
+  echo "Usage: $0 <cvmfs-x509-helper source directory> <build result location>"
+  echo "This script builds the deb for the current platform."
   exit 1
 fi
 
@@ -50,7 +50,7 @@ echo "done"
 
 echo -n "figuring out version number... "
 specfile="$srctree/packaging/rpm/cvmfs-x509-helper.spec"
-upstream_version="$(grep ^Version: $specfile | awk '{print $2}').$(grep ^Release: $specfile | awk '{print $2}' | cut -d% -f1)"
+upstream_version="$(grep ^Version: $specfile | awk '{print $2}').$(grep '%define release_prefix' $specfile | awk '{print $3}' | cut -d% -f1)"
 echo "done: $upstream_version"
 
 echo "building..."

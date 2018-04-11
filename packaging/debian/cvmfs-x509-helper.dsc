@@ -1,3 +1,8 @@
+# created by ../../ci/obsupdate-deb.sh, do not edit by hand
+Debtransform-Tar: cvmfs-x509-helper-1.0.tar.gz
+Format: 1.0
+Version: 1.0.2-1
+Binary: cvmfs-x509-helper
 Source: cvmfs-x509-helper
 Maintainer: Jakob Blomer <jblomer@cern.ch>
 Section: utils
@@ -10,3 +15,6 @@ Package: cvmfs-x509-helper
 Architecture: i386 amd64
 Depends: ${shlibs:Depends}, cvmfs, libglobus-common0, libglobus-gsi-callback0, libglobus-gsi-cert-utils0, libglobus-gsi-credential1, libvomsapi1 | libvomsapi1v5
 Description: CernVM File System X509 authz helper
+Files:
+  ffffffffffffffffffffffffffffffff 99999 file1
+  ffffffffffffffffffffffffffffffff 99999 file2

@@ -120,6 +120,8 @@ static FILE *GetProxyFileInternal(pid_t pid, uid_t uid, gid_t gid)
   int fd2 = open(".", O_RDONLY); // Open FD to old $CWD
   if ((fd == -1) || (fd2 == -1)) {
     seteuid(olduid);
+    if (fd != -1) {close(fd);}
+    if (fd2 != -1) {close(fd2);}
     return NULL;
   }
 
@@ -134,6 +136,8 @@ static FILE *GetProxyFileInternal(pid_t pid, uid_t uid, gid_t gid)
       // Unable to restore original state!  Abort...
       abort();
     }
+    close(fd);
+    close(fd2);
     can_chroot = false;
     seteuid(olduid);
     return NULL;
@@ -155,6 +159,8 @@ static FILE *GetProxyFileInternal(pid_t pid, uid_t uid, gid_t gid)
   }
   setegid(oldgid); // Restore remaining privileges.
   seteuid(olduid);
+  close(fd);
+  close(fd2);
 
   return fp;
 }

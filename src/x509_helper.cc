@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <unistd.h>
+#include <libgen.h>
 
 #include <cassert>
 #include <cstdio>
@@ -22,6 +23,10 @@
 #include "x509_helper_log.h"
 #include "x509_helper_req.h"
 #include "x509_helper_voms.h"
+
+#include "scitoken_helper_fetch.h"
+#include "scitoken_helper_check.h"
+
 #include "json.h"
 typedef struct json_value JSON;
 
@@ -41,7 +46,8 @@ static void Read(void *buf, size_t nbyte) {
   do {
     num_bytes = read(fileno(stdin), buf, nbyte);
   } while ((num_bytes < 0) && (errno == EINTR));
-  assert((num_bytes >= 0) && (static_cast<size_t>(num_bytes) == nbyte));
+  assert(num_bytes >= 0);
+  assert(static_cast<size_t>(num_bytes) == nbyte);
 }
 
 
@@ -165,7 +171,7 @@ static void CheckCallContext() {
 }
 
 
-int main() {
+int main(int argc, char **argv) {
   CheckCallContext();
 
   // Handshake
@@ -183,34 +189,57 @@ int main() {
     LogAuthz(kLogAuthzDebug, "got authz request %s", msg.c_str());
     AuthzRequest request = ParseRequest(msg);
     string proxy;
-    FILE *fp_proxy = GetX509Proxy(request, &proxy);
-    if (fp_proxy == NULL) {
-      // kAuthzNotFound, 5 seconds TTL
-      LogAuthz(kLogAuthzDebug, "reply 'proxy not found'");
-      WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-               "\"status\":1,\"ttl\":5}}");
-      continue;
-    }
+    LogAuthz(kLogAuthzDebug, "Executable: %s", basename(argv[0]));
+    if (strcmp(basename(argv[0]), "cvmfs_scitoken_helper") == 0) {
+      FILE *fp_token = GetSciToken(request, &proxy);
+      // This will close fp_proxy along the way.
+      StatusSciTokenValidation validation_status =
+        CheckSciToken(request.membership, fp_token);
+      LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);
+      
+      switch (validation_status) {
+        case kCheckTokenInvalid:
+          WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+                 "\"status\":2,\"ttl\":5}}");
+          break;
+        case kCheckTokenGood:
+          WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+                   "\"status\":0,\"bearer_token\":\"" + Base64(proxy) + "\"}}");
+          break;
+        default:
+          abort();
+      }
+      
+    } else {
+      FILE *fp_proxy = GetX509Proxy(request, &proxy);
+      if (fp_proxy == NULL) {
+        // kAuthzNotFound, 5 seconds TTL
+        LogAuthz(kLogAuthzDebug, "reply 'proxy not found'");
+        WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+                 "\"status\":1,\"ttl\":5}}");
+        continue;
+      }
 
-    // This will close fp_proxy along the way.
-    StatusX509Validation validation_status =
-      CheckX509Proxy(request.membership, fp_proxy);
-    LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);
-    switch (validation_status) {
-      case kCheckX509Invalid:
-        WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-               "\"status\":2,\"ttl\":5}}");
-        break;
-      case kCheckX509NotMember:
-        WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-                 "\"status\":3,\"ttl\":5}}");
-        break;
-      case kCheckX509Good:
-        WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-                 "\"status\":0,\"x509_proxy\":\"" + Base64(proxy) + "\"}}");
-        break;
-      default:
-        abort();
+      // This will close fp_proxy along the way.
+      StatusX509Validation validation_status =
+        CheckX509Proxy(request.membership, fp_proxy);
+      LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);
+      switch (validation_status) {
+        case kCheckX509Invalid:
+          WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+                 "\"status\":2,\"ttl\":5}}");
+          break;
+        case kCheckX509NotMember:
+          WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+                   "\"status\":3,\"ttl\":5}}");
+          break;
+        case kCheckX509Good:
+          WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+                   "\"status\":0,\"x509_proxy\":\"" + Base64(proxy) + "\"}}");
+          break;
+        default:
+          abort();
+      }
     }
   }
 

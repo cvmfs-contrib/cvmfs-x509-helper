@@ -2,7 +2,7 @@
  * This file is part of the CernVM File System.
  */
 
-#include "x509_helper_fetch.h"
+#include "scitoken_helper_fetch.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -17,17 +17,14 @@
 #include "x509_helper_log.h"
 #include "helper_utils.h"
 
-using namespace std;  // NOLINT
-
-
-FILE *GetX509Proxy(
+FILE *GetSciToken(
 const AuthzRequest &authz_req, string *proxy) {
   assert(proxy != NULL);
 
   FILE *fproxy =
-    GetFile("X509_USER_PROXY", authz_req.pid, authz_req.uid, authz_req.gid);
+    GetFile("TOKEN", authz_req.pid, authz_req.uid, authz_req.gid);
   if (fproxy == NULL) {
-    LogAuthz(kLogAuthzDebug, "no proxy found for %s",
+    LogAuthz(kLogAuthzDebug, "no token found for %s",
              authz_req.Ident().c_str());
     return NULL;
   }

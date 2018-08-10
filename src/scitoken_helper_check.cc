@@ -13,6 +13,7 @@
 
 using namespace std;  // NOLINT
 
+__attribute__ ((visibility ("default")))
 StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token) {
   
   // At this point, fp_token points to the token file

@@ -24,8 +24,8 @@
 #include "x509_helper_req.h"
 #include "x509_helper_voms.h"
 
+#include "scitoken_helper_loader.h"
 #include "scitoken_helper_fetch.h"
-#include "scitoken_helper_check.h"
 
 #include "json.h"
 typedef struct json_value JSON;
@@ -184,17 +184,24 @@ int main(int argc, char **argv) {
            "x509 authz helper invoked, connected to cvmfs process %d",
            getppid());
 
+  CheckSciToken_t checker = NULL;
+  if (strcmp(basename(argv[0]), "cvmfs_scitoken_helper") == 0) {
+    checker = SciTokenLib::GetInstance();
+  }
+
   while (true) {
     msg = ReadMsg();
     LogAuthz(kLogAuthzDebug, "got authz request %s", msg.c_str());
     AuthzRequest request = ParseRequest(msg);
     string proxy;
     LogAuthz(kLogAuthzDebug, "Executable: %s", basename(argv[0]));
-    if (strcmp(basename(argv[0]), "cvmfs_scitoken_helper") == 0) {
+
+    // TODO: implement fallback.
+    if (checker) {
       FILE *fp_token = GetSciToken(request, &proxy);
       // This will close fp_proxy along the way.
       StatusSciTokenValidation validation_status =
-        CheckSciToken(request.membership, fp_token);
+        (*checker)(request.membership, fp_token);
       LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);
       
       switch (validation_status) {

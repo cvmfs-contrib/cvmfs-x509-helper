@@ -94,6 +94,11 @@ pkg_check_modules(GLOBUS REQUIRED globus-gsi-credential globus-gsi-cert-utils gl
 set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} ${GLOBUS_INCLUDE_DIRS})
 add_definitions(-DGLOBUS_AUTHZ)
 
+# Used to validate SciTokens.
+find_package( Boost REQUIRED COMPONENTS python )
+find_package( PythonLibs REQUIRED )
+find_package( PythonInterp REQUIRED )
+
 include_directories (${INCLUDE_DIRECTORIES} vjson)
 
 add_subdirectory (vjson)

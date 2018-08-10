@@ -13,7 +13,12 @@ enum StatusSciTokenValidation {
   kCheckTokenInvalid,
 };
 
+typedef StatusSciTokenValidation (*CheckSciToken_t)(const std::string &membership,
+                                                    FILE *fp_token);
+
+extern "C" {
 StatusSciTokenValidation CheckSciToken(const std::string &membership,
-                                    FILE *fp_token);
+                                       FILE *fp_token);
+}
 
 #endif  // CVMFS_AUTHZ_SCITOKEN_HELPER_CHECK_H_

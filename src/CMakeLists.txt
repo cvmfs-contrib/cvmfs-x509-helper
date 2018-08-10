@@ -22,8 +22,10 @@ set (CVMFS_X509_VALIDATOR_SOURCES
   x509_helper_dynlib.cc x509_helper_dynlib.h
   x509_helper_voms.cc x509_helper_voms.h)
 
+include_directories(${PYTHON_INCLUDE_DIRS} ${BOOST_INCLUDE_DIRS})
 add_library (libcvmfs_scitoken_helper MODULE ${LIBCVMFS_X509_HELPER_SOURCES})
 set_target_properties (libcvmfs_scitoken_helper PROPERTIES OUTPUT_NAME cvmfs_scitoken_helper)
+target_link_libraries(libcvmfs_scitoken_helper ${Boost_PYTHON_LIBRARY} ${PYTHON_LIBRARIES})
 
 add_executable (cvmfs_x509_helper ${CVMFS_X509_HELPER_SOURCES})
 add_executable (cvmfs_scitoken_helper ${CVMFS_X509_HELPER_SOURCES})

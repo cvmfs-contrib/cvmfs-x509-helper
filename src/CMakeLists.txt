@@ -13,7 +13,8 @@ set (CVMFS_X509_HELPER_SOURCES
   scitoken_helper_loader.cc scitoken_helper_loader.h)
 
 set (LIBCVMFS_X509_HELPER_SOURCES
-  scitoken_helper_check.cc scitoken_helper_check.h)
+  scitoken_helper_check.cc scitoken_helper_check.h
+  x509_helper_log.cc x509_helper_log.h)
 
 set (CVMFS_X509_VALIDATOR_SOURCES
   x509_validator.cc

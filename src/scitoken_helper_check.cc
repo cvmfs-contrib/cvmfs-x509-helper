@@ -36,6 +36,8 @@ handle_pyerror()
 __attribute__ ((visibility ("default")))
 StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token) {
 
+  LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Checking scitoken");
+  fprintf(stderr, "Checking scitoken\n");
   if (!Py_IsInitialized())
   {
     char pname[] = "cvmfs_scitokens_helper";
@@ -46,31 +48,38 @@ StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token)
       boost::python::object helper_module = boost::python::import("cvmfs_scitokens_helper");
       g_validation_function = helper_module.attr("check_token");
     } catch (boost::python::error_already_set &) {
-      LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr,
-               "Failed to initialize cvmfs_scitokens_helper python module: %s\n", handle_pyerror().c_str());
+      fprintf(stderr, "Failed to initialize cvmfs_scitokens_helper python module: %s\n", handle_pyerror().c_str());
 
       // TODO: Log failure -- use handle_pyerror above
       return kCheckTokenInvalid;
     }
   } else if (g_validation_function.ptr() == Py_None) {
     // TODO: Log failure.
+    fprintf(stderr, "Failed to find cvmfs_scitokens_helper module and check_token attribute: %s\n", handle_pyerror().c_str());
     return kCheckTokenInvalid;
   }
 
   bool result = false;
   try {
-    PyObject *fp_pyobj = PyFile_FromFile(fp_token, "token_handle", "r", fclose);
+    char fname[] = "token_handle";
+    char mode[] = "r";
+    PyObject *fp_pyobj = PyFile_FromFile(fp_token, fname, mode, fclose);
     if (!fp_pyobj) {
       // TODO: Log failure
+      fprintf(stderr, "Failed to initialize file handle to token: %s\n", handle_pyerror().c_str());
       return kCheckTokenInvalid;
     }
-    boost::python::object fp_obj(boost::python::handle<>(fp_pyobj));
+    
+    boost::python::handle<> fp_handle(fp_pyobj);
+    
+    boost::python::object fp_obj(fp_handle);
 
     boost::python::object membership_obj(membership);
 
     boost::python::object result_obj = g_validation_function(membership_obj, fp_obj);
+    result = boost::python::extract<bool>(result_obj);
   } catch (boost::python::error_already_set &) {
-    // TODO: Log failure.
+    fprintf(stderr, "Failed to call validation function: %s\n", handle_pyerror().c_str());
   }
   
   // At this point, fp_token points to the token file

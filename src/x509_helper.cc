@@ -198,8 +198,10 @@ int main(int argc, char **argv) {
 
     // TODO: implement fallback.
     if (checker) {
+      LogAuthz(kLogAuthzDebug, "Using SciTokens checker");
       FILE *fp_token = GetSciToken(request, &proxy);
       // This will close fp_proxy along the way.
+      LogAuthz(kLogAuthzDebug, "Calling SciTokens checker");
       StatusSciTokenValidation validation_status =
         (*checker)(request.membership, fp_token);
       LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);

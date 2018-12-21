@@ -8,6 +8,12 @@ import sys
 import os
 import json
 import struct
+import scitokens
+import base64
+import requests
+
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 helper_process = None
 def WriteMsg(to_write):
@@ -23,37 +29,63 @@ def ReadMsg():
 
 def main():
     global helper_process
-    
+
     # The first argument is the executable to run and test
     executable = sys.argv[1]
-    
+
     # Execute the helper
     os.environ["CVMFS_AUTHZ_HELPER"] = "1"
     helper_process = subprocess.Popen(executable, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    
+
     # Send the helper the welcome message
     handshake = {"cvmfs_authz_v1": {'debug_log': '/tmp/debug', 'syslog_level': 1}}
     WriteMsg(handshake)
-        
+
     # Get the json back
     print(ReadMsg())
-    
+
+    demo_json = {
+        "payload": {
+            'scp': "read:/",
+            'aud': "ANY",
+        },
+        "header": {
+            'alg': 'RS256',
+            'typ': 'JWT'
+        }
+    }
+
+    data = json.dumps({
+            'payload': json.dumps(demo_json['payload']),
+            'header': json.dumps(demo_json['header']),
+            'algorithm': 'RS256'
+            })
+
+    # Set the header so that cloudflare lets it through
+    head = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36','Content-Type': 'application/json'}
+
+    r = requests.post("https://demo.scitokens.org/issue", data = data, headers = head)
+    serialized_token = r.text
+
     # Set the token variable
     with open('/tmp/token', 'w') as token_file:
-        token_file.write("abcd1234")
+        token_file.write(serialized_token)
     os.environ['TOKEN'] = '/tmp/token'
-    
+
+    membership = "https://demo.scitokens.org"
+    encoded_membership = base64.urlsafe_b64encode(membership)
+
     request = {'cvmfs_authz_v1': {
                     'uid': os.getuid(),
                     'gid': os.getgid(),
                     'pid': os.getpid(),
                     'msgid': 3,
-                    'membership': ""}
+                    'membership': encoded_membership}
                 }
     WriteMsg(request)
-    
+
     print(ReadMsg())
-    
+
 
 
 if __name__ == "__main__":

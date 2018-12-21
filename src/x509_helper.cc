@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
           break;
         case kCheckTokenGood:
           WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-                   "\"status\":0,\"bearer_token\":\"" + Base64(proxy) + "\"}}");
+                   "\"status\":0,\"bearer_token\":\"" + proxy + "\"}}");
           break;
         default:
           abort();

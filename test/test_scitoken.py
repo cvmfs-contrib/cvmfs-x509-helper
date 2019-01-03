@@ -46,7 +46,7 @@ def main():
 
     demo_json = {
         "payload": {
-            'scp': "read:/",
+            'scp': "read:/cvmfs/test",
             'aud': "ANY",
         },
         "header": {
@@ -72,7 +72,7 @@ def main():
         token_file.write(serialized_token)
     os.environ['TOKEN'] = '/tmp/token'
 
-    membership = "https://demo.scitokens.org"
+    membership = "https://demo.scitokens.org;/cvmfs/doesnotwork"
     encoded_membership = base64.urlsafe_b64encode(membership)
 
     request = {'cvmfs_authz_v1': {

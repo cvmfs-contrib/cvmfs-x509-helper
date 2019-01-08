@@ -74,11 +74,13 @@ macro (look_for_include_files)
 endmacro (look_for_include_files)
 
 set (REQUIRED_HEADERS alloca.h dlfcn.h errno.h fcntl.h inttypes.h limits.h
-                      pthread.h  stdint.h sys/types.h syslog.h time.h unistd.h)
+                      pthread.h  stdint.h sys/types.h syslog.h time.h unistd.h
+                      scitokens/scitokens.h)
 look_for_include_files (${REQUIRED_HEADERS})
 
 set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} ${CMAKE_BINARY_DIR})
 
+find_library(SCITOKENS_LIB SciTokens)
 
 # OpenSSL
 find_package (OpenSSL REQUIRED)
@@ -93,11 +95,6 @@ include (FindPkgConfig)
 pkg_check_modules(GLOBUS REQUIRED globus-gsi-credential globus-gsi-cert-utils globus-common globus-gsi-sysconfig globus-gsi-callback)
 set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} ${GLOBUS_INCLUDE_DIRS})
 add_definitions(-DGLOBUS_AUTHZ)
-
-# Used to validate SciTokens.
-find_package( Boost REQUIRED COMPONENTS python )
-find_package( PythonLibs REQUIRED )
-find_package( PythonInterp REQUIRED )
 
 include_directories (${INCLUDE_DIRECTORIES} vjson)
 

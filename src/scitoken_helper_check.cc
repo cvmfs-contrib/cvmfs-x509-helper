@@ -24,7 +24,6 @@ __attribute__ ((visibility ("default")))
 StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token) {
 
   LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Checking scitoken");
-  fprintf(stderr, "Checking scitoken\n");
 
   SciToken scitoken;
 
@@ -63,7 +62,6 @@ StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token)
       } else {
         issuer = line;
       }
-      fprintf(stderr, "Issuer: %s, Scope: %s\n", issuer.c_str(), scope.c_str());
       issuers[issuer] = scope;
       issuers_vec.push_back(issuer);
     }
@@ -80,7 +78,6 @@ StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token)
   char *err_msg = NULL;
   if (scitoken_deserialize(token.c_str(), &scitoken, null_ended_list, &err_msg)) {
     LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to deserialize scitoken");
-    fprintf(stderr, "Failed to deserialize token");
     // Loop through and delete the issuers
     for (std::vector<string>::size_type i = 0; i < issuers_vec.size(); i++) {
       delete null_ended_list[i];
@@ -97,7 +94,6 @@ StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token)
   char* issuer_ptr = NULL;
   if(scitoken_get_claim_string(scitoken, "iss", &issuer_ptr, &err_msg)) {
     LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to get issuer from token: %s\n", err_msg);
-    fprintf(stderr, "Failed to get issuer from token: %s\n", err_msg);
     return kCheckTokenInvalid;
   }
   string issuer(issuer_ptr);
@@ -110,13 +106,11 @@ StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token)
   char hostname[1024];
   if (gethostname(hostname, 1024) != 0) {
     LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to get hostname");
-    fprintf(stderr, "Failed to get hostname\n");
   }
   aud_list[0] = hostname;
   aud_list[1] = NULL;
   if (!(enf = enforcer_create(issuer.c_str(), aud_list, &err_msg))) {
     LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to create enforcer");
-    fprintf(stderr, "Failed to create enforcer\n");
     return kCheckTokenInvalid;
   }
 
@@ -126,7 +120,6 @@ StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token)
   // Set the scope appropriately
   if (enforcer_test(enf, scitoken, &acl, &err_msg)) {
     LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed enforcer test: %s\n", err_msg);
-    fprintf(stderr, "Failed enforcer test: %s\n", err_msg);
     return kCheckTokenInvalid;
   }
   

@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
     string proxy;
     LogAuthz(kLogAuthzDebug, "Executable: %s", basename(argv[0]));
 
-    // TODO: implement fallback.
+    // Try SciTokens first, if it was invoked as the cvmfs_scitoken_helper
     if (checker) {
       LogAuthz(kLogAuthzDebug, "Using SciTokens checker");
       FILE *fp_token = GetSciToken(request, &proxy);
@@ -206,49 +206,43 @@ int main(int argc, char **argv) {
         (*checker)(request.membership, fp_token);
       LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);
       
-      switch (validation_status) {
-        case kCheckTokenInvalid:
-          WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-                 "\"status\":2,\"ttl\":5}}");
-          break;
-        case kCheckTokenGood:
-          WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+      if (validation_status == kCheckTokenGood) {
+        WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
                    "\"status\":0,\"bearer_token\":\"" + proxy + "\"}}");
-          break;
-        default:
-          abort();
+        return 0;
       }
       
-    } else {
-      FILE *fp_proxy = GetX509Proxy(request, &proxy);
-      if (fp_proxy == NULL) {
-        // kAuthzNotFound, 5 seconds TTL
-        LogAuthz(kLogAuthzDebug, "reply 'proxy not found'");
-        WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-                 "\"status\":1,\"ttl\":5}}");
-        continue;
-      }
+    }
 
-      // This will close fp_proxy along the way.
-      StatusX509Validation validation_status =
-        CheckX509Proxy(request.membership, fp_proxy);
-      LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);
-      switch (validation_status) {
-        case kCheckX509Invalid:
-          WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-                 "\"status\":2,\"ttl\":5}}");
-          break;
-        case kCheckX509NotMember:
-          WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-                   "\"status\":3,\"ttl\":5}}");
-          break;
-        case kCheckX509Good:
-          WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-                   "\"status\":0,\"x509_proxy\":\"" + Base64(proxy) + "\"}}");
-          break;
-        default:
-          abort();
-      }
+    // The rest of this is trying with the x509 proxy
+    FILE *fp_proxy = GetX509Proxy(request, &proxy);
+    if (fp_proxy == NULL) {
+      // kAuthzNotFound, 5 seconds TTL
+      LogAuthz(kLogAuthzDebug, "reply 'proxy not found'");
+      WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+                "\"status\":1,\"ttl\":5}}");
+      continue;
+    }
+
+    // This will close fp_proxy along the way.
+    StatusX509Validation validation_status =
+      CheckX509Proxy(request.membership, fp_proxy);
+    LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);
+    switch (validation_status) {
+      case kCheckX509Invalid:
+        WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+                "\"status\":2,\"ttl\":5}}");
+        break;
+      case kCheckX509NotMember:
+        WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+                  "\"status\":3,\"ttl\":5}}");
+        break;
+      case kCheckX509Good:
+        WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+                  "\"status\":0,\"x509_proxy\":\"" + Base64(proxy) + "\"}}");
+        break;
+      default:
+        abort();
     }
   }
 

@@ -57,6 +57,7 @@ set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} src)
 # check existence of include files
 #
 include (CheckIncludeFile)
+include (GNUInstallDirs)
 
 macro (pedantic_include_check HEADERFILE VARIABLENAME)
   check_include_file (${HEADERFILE} ${VARIABLENAME})

@@ -41,7 +41,7 @@ install (
   RUNTIME
   DESTINATION    libexec/cvmfs/authz
   LIBRARY
-  DESTINATION    lib
+  DESTINATION    ${CMAKE_INSTALL_LIBDIR}
 )
 
 

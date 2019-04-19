@@ -33,11 +33,11 @@ add_executable (cvmfs_x509_validator ${CVMFS_X509_VALIDATOR_SOURCES})
 add_dependencies (cvmfs_x509_helper libvjson)
 add_dependencies (cvmfs_scitoken_helper libvjson)
 target_link_libraries (cvmfs_x509_helper vjson ${OPENSSL_LIBRARIES} dl)
-target_link_libraries (cvmfs_scitoken_helper vjson ${OPENSSL_LIBRARIES} ${SCITOKENS_LIB} dl)
+target_link_libraries (cvmfs_scitoken_helper vjson ${OPENSSL_LIBRARIES} dl)
 target_link_libraries (cvmfs_x509_validator dl)
 
 install (
-  TARGETS      cvmfs_x509_helper cvmfs_x509_validator cvmfs_scitoken_helper
+  TARGETS      cvmfs_x509_helper cvmfs_x509_validator cvmfs_scitoken_helper libcvmfs_scitoken_helper
   RUNTIME
   DESTINATION    libexec/cvmfs/authz
   LIBRARY

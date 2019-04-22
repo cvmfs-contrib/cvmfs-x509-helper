@@ -62,7 +62,7 @@ static bool GetFileFromEnv(
     return false;
   }
 
-  // Look for X509_USER_PROXY in the environment and store the value in path
+  // Look for `env_name` in the environment and store the value in path
   int c = '\0';
   size_t idx = 0, key_idx = 0;
   bool set_env = false;

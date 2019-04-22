@@ -56,9 +56,9 @@ StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token)
       std::size_t found = line.find(";");
       string issuer;
       string scope("/");
-      if (found!=std::string::npos) {
+      if (found != std::string::npos) {
         issuer = line.substr(0, found);
-        scope = line.substr(found + 1, line.length()+1);
+        scope = line.substr(found + 1, line.length() + 1);
       } else {
         issuer = line;
       }

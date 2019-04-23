@@ -35,6 +35,9 @@ const AuthzRequest &authz_req, std::string *proxy, const std::string &var_name) 
   unsigned nbytes;
   do {
     nbytes = fread(buf, 1, kBufSize, fproxy);
+    if (ferror(fproxy)) {
+      LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Error reading token file");
+    }
     if (nbytes > 0)
       proxy->append(std::string(buf, nbytes));
   } while (nbytes == kBufSize);

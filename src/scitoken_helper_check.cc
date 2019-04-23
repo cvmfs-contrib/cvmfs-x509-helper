@@ -35,6 +35,7 @@ StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
     size_t read = fread((void *)&buf[0], 1, N, fp_token);
     if (ferror(fp_token)) {
       LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Error reading token file");
+      return kCheckTokenInvalid;
     }
     if (read) { token.append(buf.begin(), buf.end()); }
     if (read < N) { break; }

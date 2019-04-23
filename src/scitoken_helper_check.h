@@ -13,7 +13,7 @@ enum StatusSciTokenValidation {
   kCheckTokenInvalid,
 };
 
-typedef StatusSciTokenValidation (*CheckSciToken_t)(const std::string &membership,
+typedef StatusSciTokenValidation (*CheckSciToken_t)(const char* membership,
                                                     FILE *fp_token);
 
 extern "C" {

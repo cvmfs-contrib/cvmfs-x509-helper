@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
       // This will close fp_proxy along the way.
       LogAuthz(kLogAuthzDebug, "Calling SciTokens checker");
       StatusSciTokenValidation validation_status =
-        (*checker)(request.membership, fp_token);
+        (*checker)(request.membership.c_str(), fp_token);
       LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);
       
       if (validation_status == kCheckTokenGood) {

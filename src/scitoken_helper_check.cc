@@ -97,6 +97,7 @@ StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token)
   char* issuer_ptr = NULL;
   if(scitoken_get_claim_string(scitoken, "iss", &issuer_ptr, &err_msg)) {
     LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to get issuer from token: %s\n", err_msg);
+    scitoken_destroy(scitoken);
     return kCheckTokenInvalid;
   }
   string issuer(issuer_ptr);
@@ -114,6 +115,7 @@ StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token)
   aud_list[1] = NULL;
   if (!(enf = enforcer_create(issuer.c_str(), aud_list, &err_msg))) {
     LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to create enforcer");
+    scitoken_destroy(scitoken);
     return kCheckTokenInvalid;
   }
 
@@ -123,9 +125,13 @@ StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token)
   // Set the scope appropriately
   if (enforcer_test(enf, scitoken, &acl, &err_msg)) {
     LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed enforcer test: %s\n", err_msg);
+    enforcer_destroy(enf);
+    scitoken_destroy(scitoken);
     return kCheckTokenInvalid;
   }
-  
+
+  scitoken_destroy(scitoken);
+  enforcer_destroy(enf);
   return kCheckTokenGood;
   
 }

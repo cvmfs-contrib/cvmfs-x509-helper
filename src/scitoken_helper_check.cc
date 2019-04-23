@@ -33,6 +33,9 @@ StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token)
   while (true) {
     vector<char> buf(N);
     size_t read = fread((void *)&buf[0], 1, N, fp_token);
+    if (ferror(fp_token)) {
+      LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Error reading token file");
+    }
     if (read) { token.append(buf.begin(), buf.end()); }
     if (read < N) { break; }
     // If the token is larger than 1MB, then stop reading in the token

@@ -17,7 +17,7 @@ typedef StatusSciTokenValidation (*CheckSciToken_t)(const std::string &membershi
                                                     FILE *fp_token);
 
 extern "C" {
-StatusSciTokenValidation CheckSciToken(const std::string &membership,
+StatusSciTokenValidation CheckSciToken(const char* membership,
                                        FILE *fp_token);
 }
 

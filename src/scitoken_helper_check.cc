@@ -21,7 +21,7 @@ using namespace std;  // NOLINT
 
 
 __attribute__ ((visibility ("default")))
-StatusSciTokenValidation CheckSciToken(const string &membership, FILE *fp_token) {
+StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
 
   LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Checking scitoken");
 

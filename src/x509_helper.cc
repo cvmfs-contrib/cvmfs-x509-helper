@@ -188,13 +188,13 @@ int main(int argc, char **argv) {
   if (strcmp(basename(argv[0]), "cvmfs_scitoken_helper") == 0) {
     checker = SciTokenLib::GetInstance();
   }
+  LogAuthz(kLogAuthzDebug, "Executable: %s", basename(argv[0]));
 
   while (true) {
     msg = ReadMsg();
     LogAuthz(kLogAuthzDebug, "got authz request %s", msg.c_str());
     AuthzRequest request = ParseRequest(msg);
     string proxy;
-    LogAuthz(kLogAuthzDebug, "Executable: %s", basename(argv[0]));
 
     // Try SciTokens first, if it was invoked as the cvmfs_scitoken_helper
     if (checker) {

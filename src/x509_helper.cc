@@ -199,7 +199,14 @@ int main(int argc, char **argv) {
     // Try SciTokens first, if it was invoked as the cvmfs_scitoken_helper
     if (checker) {
       LogAuthz(kLogAuthzDebug, "Using SciTokens checker");
-      FILE *fp_token = GetSciToken(request, &proxy);
+      // Get the environment variable CVMFS_TOKEN_VARNAME
+      const char* var_name;
+      if (getenv("CVMFS_TOKEN_VARNAME")) {
+        var_name = getenv("CVMFS_TOKEN_VARNAME");
+      } else {
+        var_name = "TOKEN";
+      }
+      FILE *fp_token = GetSciToken(request, &proxy, var_name);
       // This will close fp_proxy along the way.
       LogAuthz(kLogAuthzDebug, "Calling SciTokens checker");
       StatusSciTokenValidation validation_status =

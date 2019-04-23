@@ -18,11 +18,11 @@
 #include "helper_utils.h"
 
 FILE *GetSciToken(
-const AuthzRequest &authz_req, string *proxy) {
+const AuthzRequest &authz_req, std::string *proxy, const std::string &var_name) {
   assert(proxy != NULL);
 
   FILE *fproxy =
-    GetFile("TOKEN", authz_req.pid, authz_req.uid, authz_req.gid);
+    GetFile(var_name.c_str(), authz_req.pid, authz_req.uid, authz_req.gid);
   if (fproxy == NULL) {
     LogAuthz(kLogAuthzDebug, "no token found for %s",
              authz_req.Ident().c_str());
@@ -36,7 +36,7 @@ const AuthzRequest &authz_req, string *proxy) {
   do {
     nbytes = fread(buf, 1, kBufSize, fproxy);
     if (nbytes > 0)
-      proxy->append(string(buf, nbytes));
+      proxy->append(std::string(buf, nbytes));
   } while (nbytes == kBufSize);
 
   rewind(fproxy);

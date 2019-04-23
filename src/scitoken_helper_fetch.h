@@ -12,7 +12,7 @@
 
 #include "x509_helper_req.h"
 
-FILE *GetSciToken(const AuthzRequest &authz_req, std::string *proxy);
+FILE *GetSciToken(const AuthzRequest &authz_req, std::string *proxy, const std::string &env_name);
 
 #endif  // CVMFS_AUTHZ_SCITOKEN_HELPER_FETCH_H_
 

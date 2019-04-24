@@ -49,7 +49,7 @@ endif (LINUX AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 #
 # flags in CMAKE_C**_FLAGS are always passed to the compiler
 #
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-exceptions -fno-strict-aliasing -fasynchronous-unwind-tables -fno-omit-frame-pointer -fvisibility=hidden -Wall -D_REENTRANT -D__EXTENSIONS__ -D_LARGEFILE64_SOURCE -D__LARGE64_FILES")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-strict-aliasing -fasynchronous-unwind-tables -fno-omit-frame-pointer -fvisibility=hidden -Wall -D_REENTRANT -D__EXTENSIONS__ -D_LARGEFILE64_SOURCE -D__LARGE64_FILES")
 
 set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} src)
 
@@ -57,6 +57,7 @@ set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} src)
 # check existence of include files
 #
 include (CheckIncludeFile)
+include (GNUInstallDirs)
 
 macro (pedantic_include_check HEADERFILE VARIABLENAME)
   check_include_file (${HEADERFILE} ${VARIABLENAME})
@@ -74,11 +75,13 @@ macro (look_for_include_files)
 endmacro (look_for_include_files)
 
 set (REQUIRED_HEADERS alloca.h dlfcn.h errno.h fcntl.h inttypes.h limits.h
-                      pthread.h  stdint.h sys/types.h syslog.h time.h unistd.h)
+                      pthread.h  stdint.h sys/types.h syslog.h time.h unistd.h
+                      scitokens/scitokens.h)
 look_for_include_files (${REQUIRED_HEADERS})
 
 set (INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} ${CMAKE_BINARY_DIR})
 
+find_library(SCITOKENS_LIB SciTokens)
 
 # OpenSSL
 find_package (OpenSSL REQUIRED)

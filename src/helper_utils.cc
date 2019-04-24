@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+#include <fstream>
 
 #include "x509_helper_log.h"
 
@@ -32,16 +33,6 @@ static bool GetFileFromEnv(
   char *path)
 {
   assert(path_len > 0);
-  
-  // +1 for null character at the beginning
-  // +1 for equals sign at end
-  size_t TO_FIND_LEN = env_name.length()+2;
-  
-  // Use a vector, because you can't use c++ std::string with a null character
-  // at the beginning, I tried
-  // And the vector will be cleaned up, no memory leaks!
-  std::vector<char> to_find(TO_FIND_LEN);
-  sprintf(&to_find[0], "%c%s=", '\0', env_name.c_str());
 
   if (snprintf(path, path_len, "/proc/%d/environ", pid) >=
       static_cast<int>(path_len))
@@ -54,34 +45,32 @@ static bool GetFileFromEnv(
   // will work if cvmfs is FUSE-mounted as an unprivileged user.
   seteuid(0);
 
-  FILE *fp = fopen(path, "r");
-  if (!fp) {
+  fstream env_file;
+  env_file.open(path, std::fstream::in);
+  if (env_file.fail()) {
     LogAuthz(kLogAuthzSyslogErr | kLogAuthzDebug,
              "failed to open environment file for pid %d.", pid);
     seteuid(olduid);
     return false;
   }
 
-  // Look for `env_name` in the environment and store the value in path
-  int c = '\0';
-  size_t idx = 0, key_idx = 0;
+  string to_find = env_name + "=";
+  string cur_str;
   bool set_env = false;
-  while (1) {
-    if (c == EOF) {break;}
-    if (key_idx == TO_FIND_LEN) {
-      if (idx >= path_len - 1) {break;}
-      if (c == '\0') {set_env = true; break;}
-      path[idx++] = c;
-    } else if (to_find[key_idx++] != c) {
-      key_idx = 0;
+  // Loop through the file by the token "\0"
+  while( getline(env_file, cur_str, '\0')) {
+    size_t pos = cur_str.find(to_find);
+    if (pos != string::npos) {
+      set_env = true;
+      strncpy(path, cur_str.substr(pos + to_find.length()).c_str(), path_len);
     }
-    c = fgetc(fp);
   }
-  fclose(fp);
-  seteuid(olduid);
 
-  if (set_env) {path[idx] = '\0';}
+  env_file.close();
+  seteuid(olduid);
   return set_env;
+
+
 }
 
 

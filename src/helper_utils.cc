@@ -60,9 +60,11 @@ static bool GetFileFromEnv(
   // Loop through the file by the token "\0"
   while( getline(env_file, cur_str, '\0')) {
     size_t pos = cur_str.find(to_find);
-    if (pos != string::npos) {
+    // Make sure the string is found and it's at the beginning
+    if (pos != string::npos && pos == 0) {
       set_env = true;
       strncpy(path, cur_str.substr(pos + to_find.length()).c_str(), path_len);
+      break;
     }
   }
 

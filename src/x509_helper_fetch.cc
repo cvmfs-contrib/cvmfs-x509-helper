@@ -13,6 +13,7 @@
 #include <climits>
 #include <cstdio>
 #include <cstring>
+#include <sstream>
 
 #include "x509_helper_log.h"
 #include "helper_utils.h"
@@ -24,8 +25,15 @@ FILE *GetX509Proxy(
 const AuthzRequest &authz_req, string *proxy) {
   assert(proxy != NULL);
 
+  stringstream default_path;
+  default_path << "/tmp/x509up_u" << authz_req.uid;
+  string default_path_str = default_path.str();
+  if (default_path_str.size() > PATH_MAX) {
+    default_path_str = "";
+  }
+
   FILE *fproxy =
-    GetFile("X509_USER_PROXY", authz_req.pid, authz_req.uid, authz_req.gid);
+    GetFile("X509_USER_PROXY", authz_req.pid, authz_req.uid, authz_req.gid, default_path_str);
   if (fproxy == NULL) {
     LogAuthz(kLogAuthzDebug, "no proxy found for %s",
              authz_req.Ident().c_str());

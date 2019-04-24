@@ -22,7 +22,7 @@ const AuthzRequest &authz_req, std::string *proxy, const std::string &var_name) 
   assert(proxy != NULL);
 
   FILE *fproxy =
-    GetFile(var_name.c_str(), authz_req.pid, authz_req.uid, authz_req.gid);
+    GetFile(var_name.c_str(), authz_req.pid, authz_req.uid, authz_req.gid, "");
   if (fproxy == NULL) {
     LogAuthz(kLogAuthzDebug, "no token found for %s",
              authz_req.Ident().c_str());

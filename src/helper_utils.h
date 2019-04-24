@@ -10,7 +10,7 @@
 #include <string>
 
 
-FILE *GetFile(const std::string &env_name, const pid_t pid, const uid_t uid, const gid_t gid);
+FILE *GetFile(const std::string &env_name, const pid_t pid, const uid_t uid, const gid_t gid, const std::string &default_path);
 
 #endif // CVMFS_AUTHZ_HELPER_UTILS_H_
 

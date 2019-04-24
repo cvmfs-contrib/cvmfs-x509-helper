@@ -90,21 +90,20 @@ static bool GetFileFromEnv(
  * The path is either taken from X509_USER_PROXY environment from the given pid
  * or it is the default location /tmp/x509up_u<UID>
  */
-FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid)
+FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, const std::string &default_path)
 {
   char path[PATH_MAX];
   if (!GetFileFromEnv(env_name, pid, PATH_MAX, path)) {
-    LogAuthz(kLogAuthzDebug,
-             "could not find file in environment; using default location "
-             "in /tmp/x509up_u%d.", uid);
     
-    /* TODO: Figure out how to generalize this 
-    if (snprintf(path, PATH_MAX, "/tmp/x509up_u%d", uid) >= PATH_MAX) {
-      if (errno == 0) {errno = ERANGE;}
+    // If there is a default path, use that
+    if (default_path.size()) {
+      LogAuthz(kLogAuthzDebug, "could not find file in environment, trying default location of %s", default_path.c_str());
+      strncpy(path, default_path.c_str(), PATH_MAX);
+    } else {
+      LogAuthz(kLogAuthzDebug, "could not find file in environment");
       return NULL;
     }
-    */
-    return NULL;
+
   }
   LogAuthz(kLogAuthzDebug, "looking for proxy in file %s", path);
 

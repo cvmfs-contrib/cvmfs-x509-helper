@@ -46,7 +46,7 @@ def main():
 
     demo_json = {
         "payload": {
-            'scope': "read:/cvmfs/test",
+            'scope': "read:/",
             'aud': "ANY",
         },
         "header": {
@@ -70,9 +70,10 @@ def main():
     # Set the token variable
     with open('/tmp/token', 'w') as token_file:
         token_file.write(serialized_token)
+        token_file.write("\n")
     os.environ['TOKEN'] = '/tmp/token'
 
-    membership = "https://demo.scitokens.org;/cvmfs/test"
+    membership = "https://demo.scitokens.org"
     encoded_membership = base64.urlsafe_b64encode(membership)
 
     request = {'cvmfs_authz_v1': {

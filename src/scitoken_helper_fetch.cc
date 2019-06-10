@@ -42,6 +42,11 @@ const AuthzRequest &authz_req, std::string *proxy, const std::string &var_name) 
       proxy->append(std::string(buf, nbytes));
   } while (nbytes == kBufSize);
 
+  // Remove the newline at the end of the token
+  if ((*proxy)[proxy->size()-1] == '\n') {
+    proxy->erase(proxy->size()-1);
+  }
+
   rewind(fproxy);
   return fproxy;
 }

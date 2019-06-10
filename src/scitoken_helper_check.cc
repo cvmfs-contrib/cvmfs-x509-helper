@@ -31,13 +31,13 @@ StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
   string token;
   const unsigned int N=1024;
   while (true) {
-    vector<char> buf(N);
+    char buf[N];
     size_t read = fread((void *)&buf[0], 1, N, fp_token);
     if (ferror(fp_token)) {
       LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Error reading token file");
       return kCheckTokenInvalid;
     }
-    if (read) { token.append(buf.begin(), buf.end()); }
+    if (read) { token.append(string(buf, read)); }
     if (read < N) { break; }
     // If the token is larger than 1MB, then stop reading in the token
     // Possible malicious user
@@ -79,9 +79,14 @@ StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
   }
   null_ended_list[issuers_vec.size()] = NULL;
 
+  // Remove the trailing new line from the token, if there is one
+  if (token[token.size()-1] == '\n') {
+    token.erase(token.size()-1);
+  }
+
   char *err_msg = NULL;
   if (scitoken_deserialize(token.c_str(), &scitoken, null_ended_list, &err_msg)) {
-    LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to deserialize scitoken");
+    LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to deserialize scitoken: %s", err_msg);
     // Loop through and delete the issuers
     for (std::vector<string>::size_type i = 0; i < issuers_vec.size(); i++) {
       delete null_ended_list[i];

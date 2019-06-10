@@ -1,8 +1,8 @@
 %{?suse_version:%define dist .suse%suse_version}
 
-Summary: CernVM File System X509 Authz Helper
+Summary: CernVM File System Authz Helper
 Name: cvmfs-x509-helper
-Version: 1.1
+Version: 2.0
 # The release_prefix macro is used in the OBS prjconf, don't change its name
 %define release_prefix 1
 Release: %{release_prefix}%{?dist}
@@ -29,11 +29,12 @@ BuildRequires: libuuid-devel
 BuildRequires: openssl-devel
 BuildRequires: pkgconfig
 BuildRequires: voms-devel
+BuildRequires: scitokens-cpp-devel
 
 Requires: cvmfs
 
 %description
-Authorization helper to verify X.509 proxy certificates and VOMS membership for
+Authorization helper to verify X.509 proxy certificates, VOMS membership, and scitokens for
 the CernVM-FS client.
 See http://cernvm.cern.ch
 Copyright (c) CERN
@@ -68,9 +69,14 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 /usr/libexec/cvmfs/authz/cvmfs_x509_helper
 /usr/libexec/cvmfs/authz/cvmfs_x509_validator
+/usr/lib64/libcvmfs_scitoken_helper.so
+/usr/libexec/cvmfs/authz/cvmfs_scitoken_helper
 %doc COPYING AUTHORS README ChangeLog
 
 %changelog
+* Tue May 14 2019 Derek Weitzel <dweitzel@unl.edu> - 2.0-1
+- Add SciTokens support
+
 * Sat Jul 28 2018 Brian Bockelman <bbockelm@cse.unl.edu> - 1.1-1
 - Fix file descriptor leak.
 

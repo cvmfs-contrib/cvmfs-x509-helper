@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <unistd.h>
+#include <libgen.h>
 
 #include <cassert>
 #include <cstdio>
@@ -22,6 +23,10 @@
 #include "x509_helper_log.h"
 #include "x509_helper_req.h"
 #include "x509_helper_voms.h"
+
+#include "scitoken_helper_loader.h"
+#include "scitoken_helper_fetch.h"
+
 #include "json.h"
 typedef struct json_value JSON;
 
@@ -41,7 +46,8 @@ static void Read(void *buf, size_t nbyte) {
   do {
     num_bytes = read(fileno(stdin), buf, nbyte);
   } while ((num_bytes < 0) && (errno == EINTR));
-  assert((num_bytes >= 0) && (static_cast<size_t>(num_bytes) == nbyte));
+  assert(num_bytes >= 0);
+  assert(static_cast<size_t>(num_bytes) == nbyte);
 }
 
 
@@ -165,7 +171,7 @@ static void CheckCallContext() {
 }
 
 
-int main() {
+int main(int argc, char **argv) {
   CheckCallContext();
 
   // Handshake
@@ -178,17 +184,52 @@ int main() {
            "x509 authz helper invoked, connected to cvmfs process %d",
            getppid());
 
+  CheckSciToken_t checker = NULL;
+  if (strcmp(basename(argv[0]), "cvmfs_scitoken_helper") == 0) {
+    checker = SciTokenLib::GetInstance();
+  }
+  LogAuthz(kLogAuthzDebug, "Executable: %s", basename(argv[0]));
+
   while (true) {
     msg = ReadMsg();
     LogAuthz(kLogAuthzDebug, "got authz request %s", msg.c_str());
     AuthzRequest request = ParseRequest(msg);
     string proxy;
+
+    // Try SciTokens first, if it was invoked as the cvmfs_scitoken_helper
+    if (checker) {
+      LogAuthz(kLogAuthzDebug, "Using SciTokens checker");
+      // Get the environment variable CVMFS_TOKEN_VARNAME
+      const char* var_name;
+      if (getenv("CVMFS_TOKEN_VARNAME")) {
+        var_name = getenv("CVMFS_TOKEN_VARNAME");
+      } else {
+        var_name = "TOKEN";
+      }
+      FILE *fp_token = GetSciToken(request, &proxy, var_name);
+      // This will close fp_proxy along the way.
+      if (fp_token) {
+        LogAuthz(kLogAuthzDebug, "Calling SciTokens checker");
+        StatusSciTokenValidation validation_status =
+          (*checker)(request.membership.c_str(), fp_token);
+        LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);
+
+        if (validation_status == kCheckTokenGood) {
+          WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
+                    "\"status\":0,\"bearer_token\":\"" + proxy + "\"}}");
+          return 0;
+        }
+      }
+      
+    }
+
+    // The rest of this is trying with the x509 proxy
     FILE *fp_proxy = GetX509Proxy(request, &proxy);
     if (fp_proxy == NULL) {
       // kAuthzNotFound, 5 seconds TTL
       LogAuthz(kLogAuthzDebug, "reply 'proxy not found'");
       WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-               "\"status\":1,\"ttl\":5}}");
+                "\"status\":1,\"ttl\":5}}");
       continue;
     }
 
@@ -199,15 +240,15 @@ int main() {
     switch (validation_status) {
       case kCheckX509Invalid:
         WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-               "\"status\":2,\"ttl\":5}}");
+                "\"status\":2,\"ttl\":5}}");
         break;
       case kCheckX509NotMember:
         WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-                 "\"status\":3,\"ttl\":5}}");
+                  "\"status\":3,\"ttl\":5}}");
         break;
       case kCheckX509Good:
         WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-                 "\"status\":0,\"x509_proxy\":\"" + Base64(proxy) + "\"}}");
+                  "\"status\":0,\"x509_proxy\":\"" + Base64(proxy) + "\"}}");
         break;
       default:
         abort();

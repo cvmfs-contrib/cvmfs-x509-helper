@@ -2,7 +2,7 @@
 
 Summary: CernVM File System X509 Authz Helper
 Name: cvmfs-x509-helper
-Version: 1.1
+Version: 1.2
 # The release_prefix macro is used in the OBS prjconf, don't change its name
 %define release_prefix 1
 Release: %{release_prefix}%{?dist}
@@ -71,6 +71,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYING AUTHORS README ChangeLog
 
 %changelog
+* Thu Sep 12 2019 Dave Dykstra <dwd@fnal.gov> - 1.2-1
+- Fix bug preventing from running unprivileged
+
 * Sat Jul 28 2018 Brian Bockelman <bbockelm@cse.unl.edu> - 1.1-1
 - Fix file descriptor leak.
 

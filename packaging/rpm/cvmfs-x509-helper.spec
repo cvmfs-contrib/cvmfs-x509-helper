@@ -4,7 +4,7 @@ Summary: CernVM File System Authz Helper
 Name: cvmfs-x509-helper
 Version: 2.1
 # The release_prefix macro is used in the OBS prjconf, don't change its name
-%define release_prefix 1
+%define release_prefix 2
 Release: %{release_prefix}%{?dist}
 Source0: https://ecsft.cern.ch/dist/cvmfs/%{name}-%{version}.tar.gz
 Group: Applications/System
@@ -31,7 +31,7 @@ BuildRequires: pkgconfig
 BuildRequires: voms-devel
 BuildRequires: scitokens-cpp-devel
 
-Requires: cvmfs
+Requires: cvmfs >= 2.6.0
 
 %description
 Authorization helper to verify X.509 proxy certificates, VOMS membership, and scitokens for
@@ -74,6 +74,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYING AUTHORS README ChangeLog
 
 %changelog
+* Thu Sep 19 2019 Dave Dykstra <dwd@fnal.gov> - 2.1-2
+- Change cvmfs requirement to >= 2.6.0 for SciTokens support
+
 * Thu Sep 12 2019 Dave Dykstra <dwd@fnal.gov> - 2.1-1
 - Fix bug preventing from running unprivileged
 

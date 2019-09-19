@@ -8,5 +8,5 @@ Homepage: http://cernvm.cern.ch/portal/filesystem
 
 Package: cvmfs-x509-helper
 Architecture: i386 amd64
-Depends: ${shlibs:Depends}, cvmfs, libglobus-common0, libglobus-gsi-callback0, libglobus-gsi-cert-utils0, libglobus-gsi-credential1, libvomsapi1 | libvomsapi1v5
+Depends: ${shlibs:Depends}, cvmfs (>= 2.6.0), libglobus-common0, libglobus-gsi-callback0, libglobus-gsi-cert-utils0, libglobus-gsi-credential1, libvomsapi1 | libvomsapi1v5
 Description: CernVM File System X509 authz helper

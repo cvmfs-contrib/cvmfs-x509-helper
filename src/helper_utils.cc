@@ -141,11 +141,7 @@ FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, cons
       // Unable to restore original state!  Abort...
       abort();
     }
-    close(fd);
-    close(fd2);
     can_chroot = false;
-    seteuid(olduid);
-    return NULL;
   }
 
   setegid(gid);

@@ -2,7 +2,7 @@
 
 Summary: CernVM File System Authz Helper
 Name: cvmfs-x509-helper
-Version: 2.0
+Version: 2.1
 # The release_prefix macro is used in the OBS prjconf, don't change its name
 %define release_prefix 1
 Release: %{release_prefix}%{?dist}
@@ -74,6 +74,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYING AUTHORS README ChangeLog
 
 %changelog
+* Thu Sep 12 2019 Dave Dykstra <dwd@fnal.gov> - 2.1-1
+- Fix bug preventing from running unprivileged
+
 * Tue May 14 2019 Derek Weitzel <dweitzel@unl.edu> - 2.0-1
 - Add SciTokens support
 

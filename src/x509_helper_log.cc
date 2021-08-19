@@ -40,6 +40,13 @@ void SetLogAuthzDebug(const string &path) {
   assert(file_debug != NULL);
 }
 
+FILE *GetLogAuthzDebugFile() {
+  return file_debug;
+}
+
+void SetLogAuthzDebugFile(FILE *fd) {
+  file_debug = fd;
+}
 
 void SetLogAuthzSyslogLevel(const int level) {
   switch (level) {

@@ -21,9 +21,9 @@ using namespace std;  // NOLINT
 
 
 __attribute__ ((visibility ("default")))
-StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
+StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token, FILE *fp_debug) {
 
-  LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Checking scitoken");
+  SetLogAuthzDebugFile(fp_debug);
 
   SciToken scitoken;
 
@@ -34,7 +34,7 @@ StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
     char buf[N];
     size_t read = fread((void *)&buf[0], 1, N, fp_token);
     if (ferror(fp_token)) {
-      LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Error reading token file");
+      LogAuthz(kLogAuthzDebug, "Error reading token file");
       return kCheckTokenInvalid;
     }
     if (read) { token.append(string(buf, read)); }
@@ -42,7 +42,7 @@ StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
     // If the token is larger than 1MB, then stop reading in the token
     // Possible malicious user
     if ( token.size() > (1024 * 1024) ) {
-      LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "SciToken larger than 1 MB");
+      LogAuthz(kLogAuthzDebug, "SciToken larger than 1 MB");
       return kCheckTokenInvalid;
     }
   }
@@ -86,7 +86,7 @@ StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
 
   char *err_msg = NULL;
   if (scitoken_deserialize(token.c_str(), &scitoken, null_ended_list, &err_msg)) {
-    LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to deserialize scitoken: %s", err_msg);
+    LogAuthz(kLogAuthzDebug, "Failed to deserialize scitoken: %s", err_msg);
     // Loop through and delete the issuers
     for (std::vector<string>::size_type i = 0; i < issuers_vec.size(); i++) {
       delete null_ended_list[i];
@@ -94,6 +94,17 @@ StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
     delete [] null_ended_list;
     return kCheckTokenInvalid;
   }
+
+  // Get the subject
+  char* subject_ptr = NULL;
+  if(scitoken_get_claim_string(scitoken, "sub", &subject_ptr, &err_msg)) {
+    LogAuthz(kLogAuthzDebug, "Failed to get subject from token: %s\n", err_msg);
+    scitoken_destroy(scitoken);
+    return kCheckTokenInvalid;
+  }
+  LogAuthz(kLogAuthzDebug, "Checking token sub %s", subject_ptr);
+  delete subject_ptr;
+
   for (std::vector<string>::size_type i = 0; i < issuers_vec.size(); i++) {
     delete null_ended_list[i];
   }
@@ -102,7 +113,7 @@ StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
   // Get the issuer
   char* issuer_ptr = NULL;
   if(scitoken_get_claim_string(scitoken, "iss", &issuer_ptr, &err_msg)) {
-    LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to get issuer from token: %s\n", err_msg);
+    LogAuthz(kLogAuthzDebug, "Failed to get issuer from token: %s\n", err_msg);
     scitoken_destroy(scitoken);
     return kCheckTokenInvalid;
   }
@@ -115,12 +126,12 @@ StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
   // Get the hostname for the audience
   char hostname[1024];
   if (gethostname(hostname, 1024) != 0) {
-    LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to get hostname");
+    LogAuthz(kLogAuthzDebug, "Failed to get hostname");
   }
   aud_list[0] = hostname;
   aud_list[1] = NULL;
   if (!(enf = enforcer_create(issuer.c_str(), aud_list, &err_msg))) {
-    LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed to create enforcer");
+    LogAuthz(kLogAuthzDebug, "Failed to create enforcer");
     scitoken_destroy(scitoken);
     return kCheckTokenInvalid;
   }
@@ -130,7 +141,7 @@ StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token) {
   acl.resource = issuers[issuer].c_str();
   // Set the scope appropriately
   if (enforcer_test(enf, scitoken, &acl, &err_msg)) {
-    LogAuthz(kLogAuthzDebug | kLogAuthzSyslog | kLogAuthzSyslogErr, "Failed enforcer test: %s\n", err_msg);
+    LogAuthz(kLogAuthzDebug, "Failed enforcer test: %s\n", err_msg);
     enforcer_destroy(enf);
     scitoken_destroy(scitoken);
     return kCheckTokenInvalid;

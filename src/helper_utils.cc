@@ -96,7 +96,7 @@ FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, cons
     }
 
   }
-  LogAuthz(kLogAuthzDebug, "looking for proxy in file %s", path);
+  LogAuthz(kLogAuthzDebug, "looking for authorization in file %s", path);
 
   /**
    * If the target process is running inside a container, then we must

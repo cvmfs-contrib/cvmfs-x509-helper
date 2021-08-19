@@ -190,6 +190,7 @@ int main(int argc, char **argv) {
   }
   LogAuthz(kLogAuthzDebug, "Executable: %s", basename(argv[0]));
 
+  FILE *fp_debug = GetLogAuthzDebugFile();
   while (true) {
     msg = ReadMsg();
     LogAuthz(kLogAuthzDebug, "got authz request %s", msg.c_str());
@@ -211,7 +212,7 @@ int main(int argc, char **argv) {
       if (fp_token) {
         LogAuthz(kLogAuthzDebug, "Calling SciTokens checker");
         StatusSciTokenValidation validation_status =
-          (*checker)(request.membership.c_str(), fp_token);
+          (*checker)(request.membership.c_str(), fp_token, fp_debug);
         LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);
 
         if (validation_status == kCheckTokenGood) {

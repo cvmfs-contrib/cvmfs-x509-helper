@@ -17,5 +17,7 @@ void SetLogAuthzSyslogLevel(const int level);
 void SetLogAuthzSyslogFacility(const int local_facility);
 void SetLogAuthzSyslogPrefix(const std::string &prefix);
 void LogAuthz(const int flags, const char *format, ...);
+FILE *GetLogAuthzDebugFile();
+void SetLogAuthzDebugFile(FILE *fd);
 
 #endif  // CVMFS_AUTHZ_X509_HELPER_LOG_H_

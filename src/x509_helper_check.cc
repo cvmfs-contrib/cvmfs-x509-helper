@@ -333,6 +333,7 @@ StatusX509Validation CheckX509Proxy(const string &membership, FILE *fp_proxy) {
   authz_data *voms_data = GenerateVOMSData(fp_proxy);
   if (voms_data == NULL)
     return kCheckX509Invalid;
+  LogAuthz(kLogAuthzDebug, "Checking proxy subject %s", voms_data->dn_);
   const bool result = CheckMultipleAuthz(voms_data, membership);
   delete voms_data;
   return result ? kCheckX509Good : kCheckX509NotMember;

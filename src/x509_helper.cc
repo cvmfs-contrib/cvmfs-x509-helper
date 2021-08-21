@@ -205,7 +205,7 @@ int main(int argc, char **argv) {
       if (getenv("CVMFS_TOKEN_VARNAME")) {
         var_name = getenv("CVMFS_TOKEN_VARNAME");
       } else {
-        var_name = "TOKEN";
+        var_name = "BEARER_TOKEN_FILE";
       }
       FILE *fp_token = GetSciToken(request, &proxy, var_name);
       // This will close fp_proxy along the way.

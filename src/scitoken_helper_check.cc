@@ -17,6 +17,8 @@
 #include <memory>
 #include <unistd.h>
 
+#include "helper_utils.h"
+
 using namespace std;  // NOLINT
 
 
@@ -29,22 +31,9 @@ StatusSciTokenValidation CheckSciToken(const char* membership, FILE *fp_token, F
 
   // Read in the entire scitoken into memory
   string token;
-  const unsigned int N=1024;
-  while (true) {
-    char buf[N];
-    size_t read = fread((void *)&buf[0], 1, N, fp_token);
-    if (ferror(fp_token)) {
-      LogAuthz(kLogAuthzDebug, "Error reading token file");
-      return kCheckTokenInvalid;
-    }
-    if (read) { token.append(string(buf, read)); }
-    if (read < N) { break; }
-    // If the token is larger than 1MB, then stop reading in the token
-    // Possible malicious user
-    if ( token.size() > (1024 * 1024) ) {
-      LogAuthz(kLogAuthzDebug, "SciToken larger than 1 MB");
-      return kCheckTokenInvalid;
-    }
+  GetStringFromFile(fp_token, token);
+  if (token == "") {
+    return kCheckTokenInvalid;
   }
 
   // Loop through the membership, looking for "https://" issuers

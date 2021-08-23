@@ -2,7 +2,7 @@
 
 Summary: CernVM File System Authz Helper
 Name: cvmfs-x509-helper
-Version: 2.1
+Version: 2.2
 # The release_prefix macro is used in the OBS prjconf, don't change its name
 %define release_prefix 2
 Release: %{release_prefix}%{?dist}
@@ -11,9 +11,6 @@ Group: Applications/System
 License: BSD
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-%if 0%{?el5}
-BuildRequires: buildsys-macros
-%endif
 BuildRequires: cmake
 BuildRequires: gcc-c++
 BuildRequires: globus-common-devel
@@ -21,11 +18,7 @@ BuildRequires: globus-gsi-callback-devel
 BuildRequires: globus-gsi-cert-utils-devel
 BuildRequires: globus-gsi-credential-devel
 BuildRequires: globus-gsi-sysconfig-devel
-%if 0%{?el5} || 0%{?el4}
-BuildRequires: e2fsprogs-devel
-%else
 BuildRequires: libuuid-devel
-%endif
 BuildRequires: openssl-devel
 BuildRequires: pkgconfig
 BuildRequires: voms-devel
@@ -74,6 +67,13 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYING AUTHORS README ChangeLog
 
 %changelog
+* Mon Aug 23 2021 Dave Dykstra <dwd@fnal.gov> - 2.2-1
+- Prevent exiting after the first token authentication
+- Close token file descriptor after use
+- Enable token debug messages
+- Implement WLCG bearer token discovery standard
+- Add libscitokens-dev build dependency on debian
+
 * Thu Sep 19 2019 Dave Dykstra <dwd@fnal.gov> - 2.1-2
 - Change cvmfs requirement to >= 2.6.0 for SciTokens support
 

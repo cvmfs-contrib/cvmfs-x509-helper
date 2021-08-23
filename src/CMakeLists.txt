@@ -14,6 +14,7 @@ set (CVMFS_X509_HELPER_SOURCES
 
 set (LIBCVMFS_X509_HELPER_SOURCES
   scitoken_helper_check.cc scitoken_helper_check.h
+  helper_utils.cc helper_utils.h
   x509_helper_log.cc x509_helper_log.h)
 
 set (CVMFS_X509_VALIDATOR_SOURCES

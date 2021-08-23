@@ -205,7 +205,7 @@ int main(int argc, char **argv) {
       if (getenv("CVMFS_TOKEN_VARNAME")) {
         var_name = getenv("CVMFS_TOKEN_VARNAME");
       } else {
-        var_name = "TOKEN";
+        var_name = "BEARER_TOKEN_FILE";
       }
       FILE *fp_token = GetSciToken(request, &proxy, var_name);
       // This will close fp_proxy along the way.
@@ -214,6 +214,7 @@ int main(int argc, char **argv) {
         StatusSciTokenValidation validation_status =
           (*checker)(request.membership.c_str(), fp_token, fp_debug);
         LogAuthz(kLogAuthzDebug, "validation status is %d", validation_status);
+        fclose(fp_token);
 
         if (validation_status == kCheckTokenGood) {
           WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"

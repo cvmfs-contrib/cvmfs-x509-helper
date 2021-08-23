@@ -14,19 +14,18 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
-#include <fstream>
 
 #include "x509_helper_log.h"
 
 using namespace std;  // NOLINT
 
 /**
- * For a given pid, extracts the env_name path from the foreign
- * process' environment.  Stores the resulting path in the user provided buffer
- * path.
+ * For a given pid, locates the env_name from the foreign process'
+ * environment.  Returns the FILE pointer positioned after the '=' in
+ * the environ file, or NULL if the environment variable is not found.
  */
  
-static bool GetFileFromEnv(
+static FILE *GetFileFromEnv(
   const std::string &env_name,
   const pid_t pid,
   const size_t path_len,
@@ -38,43 +37,83 @@ static bool GetFileFromEnv(
       static_cast<int>(path_len))
   {
     if (errno == 0) {errno = ERANGE;}
-    return false;
+    return NULL;
   }
   int olduid = geteuid();
   // NOTE: we ignore return values of these syscalls; this code path
   // will work if cvmfs is FUSE-mounted as an unprivileged user.
   seteuid(0);
 
-  fstream env_file;
-  env_file.open(path, std::fstream::in);
-  if (env_file.fail()) {
+  FILE *env_file = fopen(path, "r");
+  seteuid(olduid);
+  if (env_file == NULL) {
     LogAuthz(kLogAuthzSyslogErr | kLogAuthzDebug,
              "failed to open environment file for pid %d.", pid);
-    seteuid(olduid);
-    return false;
+    return NULL;
   }
 
-  string to_find = env_name + "=";
   string cur_str;
-  bool set_env = false;
-  // Loop through the file by the token "\0"
-  while( getline(env_file, cur_str, '\0')) {
-    size_t pos = cur_str.find(to_find);
-    // Make sure the string is found and it's at the beginning
-    if (pos != string::npos && pos == 0) {
-      set_env = true;
-      strncpy(path, cur_str.substr(pos + to_find.length()).c_str(), path_len);
-      break;
-    }
-  }
+  int c;
+  do {
+    // Search for the variable
+    cur_str = "";
+    do {
+      // Loop until find an equal sign
+      c = fgetc(env_file);
+      if (c == '=') {
+        if (cur_str == env_name) {
+          // Got a match
+          return env_file;
+        } else {
+          // Not this one, skip the value until the next null character
+          do {
+            c = fgetc(env_file);
+          } while ((c != EOF) && (c != '\0'));
+        }
+      } else if (c != EOF) {
+        // append the character to the variable name
+        cur_str.append(1, c);
+      }
+    } while ((c != EOF) && (c != '\0'));
+  } while (c != EOF);
 
-  env_file.close();
-  seteuid(olduid);
-  return set_env;
-
-
+  fclose(env_file);
+  return NULL;
 }
 
+/**
+ * For a given pid, extracts the env_name path from the foreign process'
+ * environment.  Stores the resulting path in the user provided buffer
+ * path.
+ */
+ 
+static bool GetPathFromEnv(
+  const std::string &env_name,
+  const pid_t pid,
+  const size_t path_len,
+  char *path)
+{
+  FILE *fp = GetFileFromEnv(env_name, pid, path_len, path);
+  if (fp == NULL) {
+    return false;
+  }
+  string str;
+  GetStringFromFile(fp, str);
+  fclose(fp);
+  strncpy(path, str.c_str(), path_len);
+  return true;
+}
+
+
+/**
+ * Gets a FILE pointer pointing to the value of an environment variable,
+ * null terminated.  Returns NULL if the variable was not found.
+ */ 
+FILE *GetEnvVarFile(const std::string &env_name, const pid_t pid)
+{
+  char path[PATH_MAX];
+  return GetFileFromEnv(env_name, pid, PATH_MAX, path);
+}
 
 /**
  * Opens a read-only file pointer to the proxy certificate as a given user.
@@ -84,19 +123,19 @@ static bool GetFileFromEnv(
 FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, const std::string &default_path)
 {
   char path[PATH_MAX];
-  if (!GetFileFromEnv(env_name, pid, PATH_MAX, path)) {
+  if (!GetPathFromEnv(env_name, pid, PATH_MAX, path)) {
     
     // If there is a default path, use that
     if (default_path.size()) {
-      LogAuthz(kLogAuthzDebug, "could not find file in environment, trying default location of %s", default_path.c_str());
+      LogAuthz(kLogAuthzDebug, "could not find %s in environment, trying default location of %s", env_name.c_str(), default_path.c_str());
       strncpy(path, default_path.c_str(), PATH_MAX);
     } else {
-      LogAuthz(kLogAuthzDebug, "could not find file in environment");
+      LogAuthz(kLogAuthzDebug, "could not find %s in environment", env_name.c_str());
       return NULL;
     }
-
   }
-  LogAuthz(kLogAuthzDebug, "looking for authorization in file %s", path);
+  else
+      LogAuthz(kLogAuthzDebug, "looking in %s from %s", path, env_name.c_str());
 
   /**
    * If the target process is running inside a container, then we must
@@ -165,3 +204,32 @@ FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, cons
 
   return fp;
 }
+
+/**
+ * Reads a string from a FILE pointer, possibly null terminated.
+ */
+void GetStringFromFile(FILE *fp, string &str) {
+  const unsigned int N=1024;
+  str = "";
+  while (true) {
+    char buf[N];
+    size_t read = fread((void *)&buf[0], 1, N, fp);
+    if (ferror(fp)) {
+      LogAuthz(kLogAuthzDebug, "error reading string from file");
+      str = "";
+      return;
+    }
+    int len = strlen(buf);
+    if (len < read) { read = len; } // null terminated
+    if (read) { str.append(string(buf, read)); }
+    if (read < N) { break; }
+    // If the string is larger than 1MB, then stop reading in
+    // Possible malicious user
+    if ( str.size() > (1024 * 1024) ) {
+      LogAuthz(kLogAuthzDebug, "string larger than 1 MB");
+      str = "";
+      return;
+    }
+  }
+}
+

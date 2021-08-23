@@ -1,7 +1,7 @@
 # created by ../../ci/obsupdate-deb.sh, do not edit by hand
 Debtransform-Tar: cvmfs-x509-helper-2.2.tar.gz
 Format: 1.0
-Version: 2.2.2-2
+Version: 2.2.2-3
 Binary: cvmfs-x509-helper
 Source: cvmfs-x509-helper
 Maintainer: Jakob Blomer <jblomer@cern.ch>

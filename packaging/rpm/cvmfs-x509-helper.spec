@@ -67,6 +67,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYING AUTHORS README ChangeLog
 
 %changelog
+* Mon Aug 23 2021 Dave Dykstra <dwd@fnal.gov> - 2.2-2
+- Forgot to reset the revision to 1; now make it match
+
 * Mon Aug 23 2021 Dave Dykstra <dwd@fnal.gov> - 2.2-1
 - Prevent exiting after the first token authentication
 - Close token file descriptor after use

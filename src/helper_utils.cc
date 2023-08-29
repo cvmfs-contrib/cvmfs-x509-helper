@@ -209,16 +209,18 @@ FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, cons
  * Reads a string from a FILE pointer, possibly null terminated.
  */
 void GetStringFromFile(FILE *fp, string &str) {
-  const unsigned int N=1024;
+  size_t N=1024;  // making this const appears to trigger a compiler bug on
+                  // EL8 at the break statement below, so leave it a variable
   str = "";
   while (true) {
-    char buf[N];
+    char buf[N+1];
     size_t read = fread((void *)&buf[0], 1, N, fp);
     if (ferror(fp)) {
       LogAuthz(kLogAuthzDebug, "error reading string from file");
       str = "";
       return;
     }
+    buf[N] = '\0';
     int len = strlen(buf);
     if (len < read) { read = len; } // null terminated
     if (read) { str.append(string(buf, read)); }

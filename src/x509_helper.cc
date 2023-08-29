@@ -42,10 +42,22 @@ using namespace std;  // NOLINT
  * Get bytes from stdin.
  */
 static void Read(void *buf, size_t nbyte) {
-  int num_bytes;
+  int n;
+  size_t num_bytes = 0;
   do {
-    num_bytes = read(fileno(stdin), buf, nbyte);
-  } while ((num_bytes < 0) && (errno == EINTR));
+    n = read(fileno(stdin), (char *)buf + num_bytes, nbyte - num_bytes);
+    if (n < 0) {
+      if (errno != EINTR) {
+	break;
+      }
+    }
+    else if (n == 0) {
+      break;
+    }
+    else {
+      num_bytes += n;
+    }
+  } while (num_bytes < nbyte);
   assert(num_bytes >= 0);
   assert(static_cast<size_t>(num_bytes) == nbyte);
 }

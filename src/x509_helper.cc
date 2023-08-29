@@ -195,7 +195,6 @@ int main(int argc, char **argv) {
     msg = ReadMsg();
     LogAuthz(kLogAuthzDebug, "got authz request %s", msg.c_str());
     AuthzRequest request = ParseRequest(msg);
-    string proxy;
 
     // Try SciTokens first, if it was invoked as the cvmfs_scitoken_helper
     if (checker) {
@@ -207,8 +206,9 @@ int main(int argc, char **argv) {
       } else {
         var_name = "BEARER_TOKEN_FILE";
       }
-      FILE *fp_token = GetSciToken(request, &proxy, var_name);
-      // This will close fp_proxy along the way.
+      string token;
+      FILE *fp_token = GetSciToken(request, &token, var_name);
+      // This will close fp_token along the way.
       if (fp_token) {
         LogAuthz(kLogAuthzDebug, "Calling SciTokens checker");
         StatusSciTokenValidation validation_status =
@@ -218,14 +218,14 @@ int main(int argc, char **argv) {
 
         if (validation_status == kCheckTokenGood) {
           WriteMsg("{\"cvmfs_authz_v1\":{\"msgid\":3,\"revision\":0,"
-                    "\"status\":0,\"bearer_token\":\"" + proxy + "\"}}");
+                    "\"status\":0,\"bearer_token\":\"" + token + "\"}}");
           continue;
         }
       }
-      
     }
 
     // The rest of this is trying with the x509 proxy
+    string proxy;
     FILE *fp_proxy = GetX509Proxy(request, &proxy);
     if (fp_proxy == NULL) {
       // kAuthzNotFound, 5 seconds TTL

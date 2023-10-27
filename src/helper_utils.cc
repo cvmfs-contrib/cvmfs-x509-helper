@@ -21,6 +21,10 @@
 
 using namespace std;  // NOLINT
 
+// for all the ignored set.*id() function call return values
+static inline void ignore_result(int) {
+}
+
 /**
  * For a given pid, locates the env_name from the foreign process'
  * environment.  Returns the FILE pointer positioned after the '=' in
@@ -44,10 +48,10 @@ static FILE *GetFileFromEnv(
   int olduid = geteuid();
   // NOTE: we ignore return values of these syscalls; this code path
   // will work if cvmfs is FUSE-mounted as an unprivileged user.
-  seteuid(0);
+  ignore_result(seteuid(0));
 
   FILE *env_file = fopen(path, "r");
-  seteuid(olduid);
+  ignore_result(seteuid(olduid));
   if (env_file == NULL) {
     LogAuthz(kLogAuthzSyslogErr | kLogAuthzDebug,
              "failed to open environment file for pid %d.", pid);
@@ -141,8 +145,8 @@ static int GetFileInNs(void *t) {
   // NOTE: this is depending on the fact that CLONE_THREAD was not
   // used because otherwise the setting is shared between threads. 
   // See the setuid(2), clone(2), and nptl(7) man pages.
-  setgid(p->gid);
-  setuid(p->uid);
+  ignore_result(setgid(p->gid));
+  ignore_result(setuid(p->uid));
 
   char path[PATH_MAX];
   if (snprintf(path, PATH_MAX, "/proc/%d/ns/user", p->pid) >= PATH_MAX) {
@@ -231,12 +235,12 @@ FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, cons
   int oldgid = getegid();
   // NOTE the sequencing: we must be eUID 0
   // to change the UID and GID.
-  seteuid(0);
+  ignore_result(seteuid(0));
 
   int fd1 = open("/", O_RDONLY); // Open FD to old root directory.
   int fd2 = open(".", O_RDONLY); // Open FD to old $CWD
   if ((fd1 == -1) || (fd2 == -1)) {
-    seteuid(olduid);
+    ignore_result(seteuid(olduid));
     if (fd1 != -1) {close(fd1);}
     if (fd2 != -1) {close(fd2);}
     return NULL;
@@ -290,10 +294,10 @@ FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, cons
     }
     fp = params.fp;
   } else {
-    setegid(gid);
-    seteuid(uid);
+    ignore_result(setegid(gid));
+    ignore_result(seteuid(uid));
     fp = fopen(env_path, "r");
-    seteuid(0); // Restore root privileges.
+    ignore_result(seteuid(0)); // Restore root privileges.
   }
 
   if (can_chroot &&
@@ -304,8 +308,8 @@ FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, cons
      ) {
     abort();
   }
-  setegid(oldgid); // Restore remaining privileges.
-  seteuid(olduid);
+  ignore_result(setegid(oldgid)); // Restore remaining privileges.
+  ignore_result(seteuid(olduid));
   close(fd1);
   close(fd2);
 
@@ -329,7 +333,7 @@ void GetStringFromFile(FILE *fp, string &str) {
     }
     buf[N] = '\0';
     int len = strlen(buf);
-    if (len < read) { read = len; } // null terminated
+    if (len < (int) read) { read = len; } // null terminated
     if (read) { str.append(string(buf, read)); }
     if (read < N) { break; }
     // If the string is larger than 1MB, then stop reading in

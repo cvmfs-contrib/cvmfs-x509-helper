@@ -14,10 +14,16 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+#include <sched.h>
+#include <wait.h>
 
 #include "x509_helper_log.h"
 
 using namespace std;  // NOLINT
+
+// for all the ignored set.*id() function call return values
+static inline void ignore_result(int) {
+}
 
 /**
  * For a given pid, locates the env_name from the foreign process'
@@ -42,10 +48,10 @@ static FILE *GetFileFromEnv(
   int olduid = geteuid();
   // NOTE: we ignore return values of these syscalls; this code path
   // will work if cvmfs is FUSE-mounted as an unprivileged user.
-  seteuid(0);
+  ignore_result(seteuid(0));
 
   FILE *env_file = fopen(path, "r");
-  seteuid(olduid);
+  ignore_result(seteuid(olduid));
   if (env_file == NULL) {
     LogAuthz(kLogAuthzSyslogErr | kLogAuthzDebug,
              "failed to open environment file for pid %d.", pid);
@@ -115,6 +121,77 @@ FILE *GetEnvVarFile(const std::string &env_name, const pid_t pid)
   return GetFileFromEnv(env_name, pid, PATH_MAX, path);
 }
 
+/* Parameters to GetFileInNs */
+struct getFileInNsParams {
+  pid_t pid;
+  uid_t uid;
+  gid_t gid;
+  char *env_path;
+  FILE *fp;
+};
+
+/**
+ * Thread function for opening a file inside a user and mount namespace.
+ * The passed in parameter is of type void * but is a reference to 
+ * a structure of type getFileInNsParams.
+ * Returns the open FILE object in the params.
+ * Returns non-zero for error and 0 for success.
+ */
+static int GetFileInNs(void *t) {
+  struct getFileInNsParams *p = (struct getFileInNsParams *) t;
+
+  // Set real gid and uid in this thread, not just effective, else
+  // it interferes with the use of the unprivileged user namespace.
+  // NOTE: this is depending on the fact that CLONE_THREAD was not
+  // used because otherwise the setting is shared between threads. 
+  // See the setuid(2), clone(2), and nptl(7) man pages.
+  ignore_result(setgid(p->gid));
+  ignore_result(setuid(p->uid));
+
+  char path[PATH_MAX];
+  if (snprintf(path, PATH_MAX, "/proc/%d/ns/user", p->pid) >= PATH_MAX) {
+    if (errno == 0) {errno = ERANGE;}
+    return errno;
+  }
+  int fd1 = open(path, O_RDONLY);
+  int fd2 = -1;
+  if (-1 == fd1) {
+    // Couldn't open new user namespace, see if it works without
+    LogAuthz(kLogAuthzDebug, "could not open new user namespace %s", path);
+  } else if (-1 == setns(fd1, CLONE_NEWUSER)) {
+    // Couldn't switch to new user namespace, try without
+    close(fd1);
+    fd1 = -1;
+    LogAuthz(kLogAuthzDebug, "could not switch to user namespace %s", path);
+  } else {
+    if (snprintf(path, PATH_MAX, "/proc/%d/ns/mnt", p->pid) >= PATH_MAX) {
+      if (errno == 0) {errno = ERANGE;}
+      return errno;
+    }
+    fd2 = open(path, O_RDONLY);
+    int saveerrno = errno;
+    if (-1 == fd2) {
+      LogAuthz(kLogAuthzDebug, "could not open new mnt namespace %s", path);
+      // Very strange that couldn't open new mnt namespace when user
+      // namespace worked.  Just return an error.
+      close(fd1);
+      return saveerrno;
+    } else if (-1 == setns(fd2, CLONE_NEWNS)) {
+      saveerrno = errno;
+      // Likewise strange that couldn't switch to new mnt namespace
+      LogAuthz(kLogAuthzDebug, "could not switch to mnt namespace %s", path);
+      close(fd1);
+      close(fd2);
+      return saveerrno;
+    }
+    LogAuthz(kLogAuthzDebug, "entered user and mnt namespace of %d", p->pid);
+  }
+  p->fp = fopen(p->env_path, "r");
+  if (fd1 != -1) close(fd1);
+  if (fd2 != -1) close(fd2);
+  return 0;
+}
+
 /**
  * Opens a read-only file pointer to the proxy certificate as a given user.
  * The path is either taken from X509_USER_PROXY environment from the given pid
@@ -122,20 +199,20 @@ FILE *GetEnvVarFile(const std::string &env_name, const pid_t pid)
  */
 FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, const std::string &default_path)
 {
-  char path[PATH_MAX];
-  if (!GetPathFromEnv(env_name, pid, PATH_MAX, path)) {
+  char env_path[PATH_MAX];
+  if (!GetPathFromEnv(env_name, pid, PATH_MAX, env_path)) {
     
     // If there is a default path, use that
     if (default_path.size()) {
       LogAuthz(kLogAuthzDebug, "could not find %s in environment, trying default location of %s", env_name.c_str(), default_path.c_str());
-      strncpy(path, default_path.c_str(), PATH_MAX);
+      strncpy(env_path, default_path.c_str(), PATH_MAX);
     } else {
       LogAuthz(kLogAuthzDebug, "could not find %s in environment", env_name.c_str());
       return NULL;
     }
   }
   else
-      LogAuthz(kLogAuthzDebug, "looking in %s from %s", path, env_name.c_str());
+      LogAuthz(kLogAuthzDebug, "looking in %s from %s", env_path, env_name.c_str());
 
   /**
    * If the target process is running inside a container, then we must
@@ -158,13 +235,13 @@ FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, cons
   int oldgid = getegid();
   // NOTE the sequencing: we must be eUID 0
   // to change the UID and GID.
-  seteuid(0);
+  ignore_result(seteuid(0));
 
-  int fd = open("/", O_RDONLY);  // Open FD to old root directory.
+  int fd1 = open("/", O_RDONLY); // Open FD to old root directory.
   int fd2 = open(".", O_RDONLY); // Open FD to old $CWD
-  if ((fd == -1) || (fd2 == -1)) {
-    seteuid(olduid);
-    if (fd != -1) {close(fd);}
+  if ((fd1 == -1) || (fd2 == -1)) {
+    ignore_result(seteuid(olduid));
+    if (fd1 != -1) {close(fd1);}
     if (fd2 != -1) {close(fd2);}
     return NULL;
   }
@@ -174,32 +251,66 @@ FILE *GetFile(const std::string &env_name, pid_t pid, uid_t uid, gid_t gid, cons
   bool can_chroot = true;
   if (-1 == chdir(container_cwd)) { // Change directory to same one as process.
     can_chroot = false;
-  }
-  if (can_chroot && (-1 == chroot(container_path))) {
-    if (-1 == fchdir(fd)) {
+  } else if (-1 == chroot(container_path)) {
+    if (-1 == fchdir(fd1)) {
       // Unable to restore original state!  Abort...
       abort();
     }
     can_chroot = false;
+    LogAuthz(kLogAuthzDebug, "could not chroot to %s", container_path);
+  } else {
+    LogAuthz(kLogAuthzDebug, "chrooted to %s", container_path);
   }
 
-  setegid(gid);
-  seteuid(uid);
+  FILE *fp = NULL;
+  if (!can_chroot) {
+    // Couldn't chroot, which can happen at least starting in RHEL8 when
+    // trying to chroot to an unprivileged user namespace as root.
+    // Instead, create a thread to try to enter user and mount namespaces
+    // as the user.  That has to be done in a thread in order to be able
+    // to return to the previous namespace.
+    struct getFileInNsParams params;
+    params.pid = pid;
+    params.uid = uid;
+    params.gid = gid;
+    params.env_path = env_path;
+    params.fp = NULL;
+    char stack[128 * 1024];
 
-  FILE *fp = fopen(path, "r");
+    pid_t cpid = clone(GetFileInNs, stack + sizeof(stack),
+                        CLONE_VM | CLONE_FILES | SIGCHLD, (void *)&params);
+    if (cpid == -1) {
+      LogAuthz(kLogAuthzDebug, "could not clone thread");
+      abort();
+    }
+    int status = 0;
+    if (waitpid(cpid, &status, 0) == -1) {
+      LogAuthz(kLogAuthzDebug, "could not wait for cloned thread");
+      abort();
+    }
+    if (status != 0) {
+      LogAuthz(kLogAuthzDebug, "clone returned an error: %d", status);
+      abort();
+    }
+    fp = params.fp;
+  } else {
+    ignore_result(setegid(gid));
+    ignore_result(seteuid(uid));
+    fp = fopen(env_path, "r");
+    ignore_result(seteuid(0)); // Restore root privileges.
+  }
 
-  seteuid(0); // Restore root privileges.
   if (can_chroot &&
-       ((-1 == fchdir(fd)) || // Change to old root directory so we can reset chroot.
+       ((-1 == fchdir(fd1)) || // Change to old root directory so we can reset chroot.
         (-1 == chroot(".")) ||
         (-1 == fchdir(fd2)) // Change to original $CWD
        )
      ) {
     abort();
   }
-  setegid(oldgid); // Restore remaining privileges.
-  seteuid(olduid);
-  close(fd);
+  ignore_result(setegid(oldgid)); // Restore remaining privileges.
+  ignore_result(seteuid(olduid));
+  close(fd1);
   close(fd2);
 
   return fp;
@@ -222,7 +333,7 @@ void GetStringFromFile(FILE *fp, string &str) {
     }
     buf[N] = '\0';
     int len = strlen(buf);
-    if (len < read) { read = len; } // null terminated
+    if (len < (int) read) { read = len; } // null terminated
     if (read) { str.append(string(buf, read)); }
     if (read < N) { break; }
     // If the string is larger than 1MB, then stop reading in

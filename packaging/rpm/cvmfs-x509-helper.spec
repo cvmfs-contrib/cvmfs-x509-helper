@@ -2,7 +2,7 @@
 
 Summary: CernVM File System Authz Helper
 Name: cvmfs-x509-helper
-Version: 2.4
+Version: 2.5
 # The release_prefix macro is used in the OBS prjconf, don't change its name
 %define release_prefix 1
 Release: %{release_prefix}%{?dist}
@@ -71,6 +71,10 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYING AUTHORS README ChangeLog
 
 %changelog
+* Tue Jun 16 2026 Dave Dykstra <dwd@fnal.gov> - 2.5
+- Update minimum cmake version to fix building on ubuntu 26.04 and
+  Fedora 43 and 44.
+
 * Fri Oct 27 2023 Derek Weitzel <dweitzel@unl.edu> - 2.4
 - Fix retrieval of credentials from an unprivileged user namespace on
   recent el8 & el9 kernels.
